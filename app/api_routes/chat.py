@@ -5,10 +5,10 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
-from middleware.logger import logger
-from middleware.database import get_db
-from middleware.models import ChatRequest, ChatResponse
-from finetune_service.finetune import FinetuneService
+from app.middleware.logger import logger
+from app.middleware.database import get_db
+from app.middleware.models import ChatRequest, ChatResponse
+from app.finetune_service.finetune import FinetuneService
 
 # Create router
 router = APIRouter(prefix="/api/chat", tags=["chat"])

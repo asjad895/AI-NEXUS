@@ -7,9 +7,9 @@ import random
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from middleware.logger import logger
-from middleware.database import FinetuneJob, ChatHistory
-from middleware.models import FinetuneStatus, FinetuneType, FinetuneRequest, FinetuneResponse
+from app.middleware.logger import logger
+from app.middleware.database import FinetuneJob, ChatHistory
+from app.middleware.models import FinetuneStatus, FinetuneType, FinetuneRequest, FinetuneResponse
 
 class FinetuneService:
     def __init__(self, db: Session):

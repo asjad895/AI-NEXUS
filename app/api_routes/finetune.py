@@ -6,13 +6,13 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from middleware.logger import logger
-from middleware.database import get_db
-from middleware.models import (
+from app.middleware.logger import logger
+from app.middleware.database import get_db
+from app.middleware.models import (
     FinetuneType, FinetuneStatus, FinetuneRequest, FinetuneResponse, 
     FinetuneUpdateRequest
 )
-from finetune_service.finetune import FinetuneService
+from app.finetune_service.finetune import FinetuneService
 
 # Create router
 router = APIRouter(prefix="/api/finetune", tags=["finetune"])

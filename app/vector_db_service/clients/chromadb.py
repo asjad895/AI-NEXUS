@@ -12,10 +12,10 @@ class ChromaDBClient(VectorDatabaseClient):
     """Client for ChromaDB vector database."""
     
     def __init__(self, 
-                 host: str = 'localhost', 
-                 port: int = 8000, 
-                 persistence_path: Optional[str] = None,
-                 http_mode: bool = False):
+                host: str = 'localhost', 
+                port: int = 8000, 
+                persistence_path: Optional[str] = None,
+                http_mode: bool = False):
         self.host = host
         self.port = port
         self.persistence_path = persistence_path
@@ -86,8 +86,8 @@ class ChromaDBClient(VectorDatabaseClient):
         return self._collections[collection_name]
     
     def ingest_documents(self, 
-                         collection_name: str, 
-                         documents: List[DocumentChunk]) -> bool:
+                        collection_name: str, 
+                        documents: List[DocumentChunk]) -> bool:
         """Ingest multiple document chunks into ChromaDB."""
         try:
             collection = self._get_collection(collection_name)
@@ -109,11 +109,12 @@ class ChromaDBClient(VectorDatabaseClient):
             print(f"Failed to ingest documents into {collection_name}: {e}")
             return False
     
-    def search(self, 
-               collection_name: str,
-               query_vector: List[float],
-               top_k: int = 10,
-               filters: Optional[Dict[str, Any]] = None) -> List[SearchResult]:
+    def search(
+        self, 
+        collection_name: str,
+        query_vector: List[float],
+        top_k: int = 10,
+        filters: Optional[Dict[str, Any]] = None) -> List[SearchResult]:
         """Search for similar vectors in ChromaDB."""
         try:
             collection = self._get_collection(collection_name)

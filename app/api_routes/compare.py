@@ -4,10 +4,10 @@ API routes for model comparison endpoints.
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from middleware.logger import logger
-from middleware.database import get_db
-from middleware.models import CompareRequest, CompareResponse
-from finetune_service.finetune import FinetuneService
+from app.middleware.logger import logger
+from app.middleware.database import get_db
+from app.middleware.models import CompareRequest, CompareResponse
+from app.finetune_service.finetune import FinetuneService
 
 # Create router
 router = APIRouter(prefix="/api/compare", tags=["compare"])

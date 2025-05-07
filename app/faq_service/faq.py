@@ -9,10 +9,11 @@ import csv
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-from middleware.models import FAQPipelineResponse,Status
-from middleware.database import FAQJob, FAQEntry
+from app.middleware.models import FAQPipelineResponse,Status
+from app.middleware.database import FAQJob, FAQEntry
 from sqlalchemy.orm import Session
-from middleware.logger import logger
+from app.middleware.logger import logger
+
 os.environ["OPIK_API_KEY"] = "2Rofpa7vTaP91PL7rkNlp8KHK" 
 os.environ["OPIK_WORKSPACE"] = "asjad12"
 opik = Opik(project_name = 'faq_pipeline',api_key = '2Rofpa7vTaP91PL7rkNlp8KHK',workspace = 'asjad12')

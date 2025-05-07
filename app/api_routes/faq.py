@@ -9,10 +9,10 @@ import shutil
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from middleware.logger import logger
-from middleware.database import get_db, FAQJob, FAQEntry
-from middleware.models import Status, FAQPipelineRequest, FAQPipelineResponse, FAQEntryModel
-from faq_service.faq import FAQService
+from app.middleware.logger import logger
+from app.middleware.database import get_db, FAQJob, FAQEntry
+from app.middleware.models import Status, FAQPipelineRequest, FAQPipelineResponse, FAQEntryModel
+from app.faq_service.faq import FAQService
 from datetime import datetime
 
 # Create router

@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+sqlalchemy
+python-multipart
+psycopg2-binary
+prometheus-client
+python-json-logger
+alembic
+typing-extensions
+chromadb
+pymilvus
+weaviate

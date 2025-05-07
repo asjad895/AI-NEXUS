@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Pipeline Playground</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Add favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-question-circle"></i>
+            <h1>FAQ Pipeline</h1>
+        </div>
+        <div class="user-info">
+            <span>Welcome, <span id="currentUserDisplay">Guest User</span></span>
+            <button id="userSettingsBtn" class="btn btn-small">
+                <i class="fas fa-user-cog"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- User Settings Modal -->
+    <div id="userSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>User Settings</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="userIdInput">User ID:</label>
+                    <input type="text" id="userIdInput" placeholder="Enter user ID">
+                </div>
+                <div class="form-group">
+                    <label for="userNameInput">Display Name:</label>
+                    <input type="text" id="userNameInput" placeholder="Enter your name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveUserSettingsBtn" class="btn btn-primary">Save</button>
+                <button class="btn close-modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Upload Document</h2>
+            <div class="upload-container" id="dropArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Drag & drop your file here</div>
+                <div class="upload-description">Supports .md, .txt, .docx files up to 10MB</div>
+                <input type="file" id="fileInput" accept=".md,.txt,.docx">
+                <button class="btn" id="browseBtn">Browse Files</button>
+            </div>
+            <div id="selectedFileInfo" style="margin-bottom: 20px; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <strong>Selected File:</strong> <span id="fileName"></span>
+                        <span id="fileSize" style="margin-left: 10px; color: #888; font-size: 14px;"></span>
+                    </div>
+                    <button id="removeFileBtn" style="background: none; border: none; color: #e74c3c; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn" id="uploadBtn" disabled>
+                    <span id="uploadSpinner" class="spinner" style="display: none;"></span>
+                    <span id="uploadBtnText">Upload & Process</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Jobs Container -->
+        <div class="card jobs-container">
+            <h2>Processing Jobs</h2>
+            <div class="jobs-header">
+                <div class="jobs-filter">
+                    <label for="statusFilter">Filter by status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Failed">Failed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="job-search">
+                    <input type="text" id="jobSearchInput" placeholder="Search by Job ID">
+                    <button id="jobSearchBtn" class="btn btn-small">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <button id="refreshJobsBtn" class="btn btn-small">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div id="jobsList"></div>
+        </div>
+    </div>
+    
+    <!-- Job Details Modal -->
+    <div id="jobDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Job Details</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="job-details-container">
+                    <div class="job-info-grid">
+                        <div class="job-info-item">
+                            <span class="job-info-label">Job ID:</span>
+                            <span id="detailJobId" class="job-info-value"></span>
+                        </div>
+                        <div class="job-info-item">
+                            <span class="job-info-label">Status:</span>
+                            <span id="detailStatus" class="job-info-value"></span>
+                        </div>
+                        <div class="job-info-item">
+                            <span class="job-info-label">Created:</span>
+                            <span id="detailCreated" class="job-info-value"></span>
+                        </div>
+                        <div class="job-info-item">
+                            <span class="job-info-label">Updated:</span>
+                            <span id="detailUpdated" class="job-info-value"></span>
+                        </div>
+                        <div class="job-info-item">
+                            <span class="job-info-label">Message:</span>
+                            <span id="detailMessage" class="job-info-value"></span>
+                        </div>
+                    </div>
+                    
+                    <div id="progressContainer" class="progress-container">
+                        <div class="progress-bar">
+                            <div id="progressBar" class="progress"></div>
+                        </div>
+                        <div id="progressText">Processing...</div>
+                    </div>
+                    
+                    <div id="jobActions" class="job-actions">
+                        <button id="downloadCsvBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-download"></i> Download CSV
+                        </button>
+                        <button id="viewEntriesBtn" class="btn btn-secondary" disabled>
+                            <i class="fas fa-table"></i> View Entries
+                        </button>
+                        <button id="cancelJobBtn" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Cancel Job
+                        </button>
+                    </div>
+                </div>
+       
+            </div>
+        </div>
+    </div>
+    
+    <!-- FAQ Entries Modal -->
+    <div id="entriesModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>FAQ Entries</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="entries-container">
+                    <div class="entries-filter">
+                        <input type="text" id="entriesSearch" placeholder="Search entries...">
+                        <select id="sectionFilter">
+                            <option value="all">All Sections</option>
+                        </select>
+                    </div>
+                    <div class="entries-table-container">
+                        <table id="entriesTable" class="entries-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Section</th>
+                                    <th>Question</th>
+                                    <th>Answer</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entriesTableBody">
+                                <!-- Entries will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

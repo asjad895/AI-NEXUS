@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Fine-tuning Platform</title>
+    <link rel="stylesheet" href="finetune.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Model Fine-tuning Platform</h1>
+            <p class="subtitle">Fine-tune AI models with your data</p>
+        </header>
+        
+        <div class="tab-headers">
+            <div class="tab-header active" data-tab="create-job">Create Fine-tuning Job</div>
+            <div class="tab-header" data-tab="job-status">Job Status</div>
+            <div class="tab-header" data-tab="chat-model">Chat with Model</div>
+            <div class="tab-header" data-tab="compare-answers">Compare Answers</div>
+        </div>
+        
+        <div id="create-job" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Create New Fine-tuning Job
+                </h2>
+                
+                <form id="finetune-form">
+                    <div class="form-group">
+                        <label for="job-ids">Job IDs (comma-separated)</label>
+                        <input type="text" id="job-ids" placeholder="e.g. job-123, job-456, job-789" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="model-select">Model</label>
+                        <select id="model-select" required>
+                            <option value="">Select a model</option>
+                            <option value="llama3-8b">Llama 3 (8B)</option>
+                            <option value="llama3-70b">Llama 3 (70B)</option>
+                            <option value="mistral-7b">Mistral (7B)</option>
+                            <option value="gemma-7b">Gemma (7B)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="type-select">Fine-tuning Type</label>
+                        <select id="type-select" required>
+                            <option value="qa">Default QA</option>
+                            <option value="embedding">Embedding</option>
+                            <option value="reasoning">Reasoning</option>
+                            <option value="summarization">Summarization</option>
+                            <option value="translation">Translation</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Submit Fine-tuning Job</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="job-status" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Fine-tuning Job Status
+                </h2>
+                
+                <div id="job-status-container" class="job-list">
+                    <p class="empty-state">No fine-tuning jobs found. Create a new job to get started.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="chat-model" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Chat with Fine-tuned Model
+                </h2>
+                
+                <div id="model-select-container" class="form-group">
+                    <label for="chat-model-select">Select Fine-tuned Model</label>
+                    <select id="chat-model-select">
+                        <option value="">No models available</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Chat Mode</label>
+                    <div>
+                        <input type="radio" id="mode-model" name="chat-mode" value="model" checked>
+                        <label for="mode-model">Model Only</label>
+                        
+                        <input type="radio" id="mode-rag" name="chat-mode" value="rag">
+                        <label for="mode-rag">RAG Only</label>
+                        
+                        <input type="radio" id="mode-both" name="chat-mode" value="both">
+                        <label for="mode-both">Model + RAG</label>
+                    </div>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-main">
+                        <div id="chat-messages" class="chat-messages">
+                            <p class="empty-state">Select a model to start chatting.</p>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" class="chat-input" placeholder="Type your message...">
+                            <button id="send-chat" class="btn btn-primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="compare-answers" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Compare Fine-tuned vs RAG Answers
+                </h2>
+                
+                <div class="form-group">
+                    <label for="compare-model-select">Select Fine-tuned Model</label>
+                    <select id="compare-model-select">
+                        <option value="">No models available</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="compare-query">Your Question</label>
+                    <input type="text" id="compare-query" placeholder="Type your question...">
+                </div>
+                
+                <button id="compare-button" class="btn btn-primary">Compare Answers</button>
+                
+                <div class="comparison-container" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="comparison-title">Fine-tuned Model Answer</div>
+                        <div id="finetune-answer" class="comparison-answer">
+                            <p class="empty-state">Ask a question to see the fine-tuned model answer.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="comparison-title">RAG Answer</div>
+                        <div id="rag-answer" class="comparison-answer">
+                            <p class="empty-state">Ask a question to see the RAG answer.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="finetune.js"></script>
+</body>
+</html>

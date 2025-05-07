@@ -14,7 +14,7 @@ from app.middleware.database import get_db, FAQJob, FAQEntry
 from app.middleware.models import Status, FAQPipelineRequest, FAQPipelineResponse, FAQEntryModel
 from app.faq_service.faq import FAQService
 from datetime import datetime
-
+from app.middleware.database import SessionLocal
 # Create router
 router = APIRouter(prefix="/api/faq", tags=["faq"])
 # faq_service = FAQService(db=Session())  # Remove this line
@@ -79,7 +79,7 @@ def process_faq_background(job_id: str, file_path: str):
     Creates its own database session.
     """
     # Create a new session for the background task
-    from middleware.database import SessionLocal
+    # from app.middleware.database import SessionLocal 
     db = SessionLocal()
     try:
         faq_service = FAQService(db=db)

@@ -55,7 +55,7 @@ class ChromaDBClient(VectorDatabaseClient):
                 return True
             except Exception:
                 # Collection doesn't exist, create it
-                collection = self._client.create_collection(
+                collection = self._client.get_or_create_collection(
                     name=collection_name,
                     metadata={"dimension": dimension}
                 )

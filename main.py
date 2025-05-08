@@ -12,7 +12,7 @@ from metrics import PrometheusMiddleware
 from app.middleware.exceptions import register_exception_handlers
 
 # Import routers
-from app.api_routes import faq, finetune, chat, compare, health, rag_chat
+from app.api_routes import faq, finetune, chat, compare, health, rag_chat, smart_conversation
 
 # Create FastAPI app
 app = FastAPI(
@@ -40,7 +40,8 @@ app.include_router(finetune.router)
 app.include_router(chat.router)
 app.include_router(compare.router)
 app.include_router(health.router)
-app.include_router(rag_chat.router)  # Add the new RAG chat router
+app.include_router(rag_chat.router)
+app.include_router(smart_conversation.router)
 
 # Root endpoint
 @app.get("/")

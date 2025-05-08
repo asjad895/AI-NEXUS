@@ -510,6 +510,7 @@ def render_sidebar():
     st.sidebar.markdown("- [Home](/)") 
     st.sidebar.markdown("- [FAQ Pipeline](/faq)")
     st.sidebar.markdown("- [Fine-tuning](/finetune)")
+    st.sidebar.markdown("- [Smart Agents](/smart_agent)")
     
     # About section
     st.sidebar.title("About")

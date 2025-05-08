@@ -75,8 +75,12 @@ Remember, you are Nexus Assistant, and your purpose is to help users find inform
             return False
             
         # Get FAQs for user
-        faqs = self.db.query(FAQEntry).filter(FAQEntry.user_id == user_id).all()
-        
+        from app.middleware.database import FinetuneJob
+        fine_tune_jobs = self.db.query(FinetuneJob).filter(FinetuneJob.user_id == user_id).all()
+        job_ids = []
+        for job in fine_tune_jobs:
+            job_ids.extend(job.job_ids.split(","))
+        faqs = self.db.query(FAQEntry).filter(FAQEntry.job_id.in_(job_ids)).all()
         if not faqs:
             return False
             

@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 # finetune_service = FinetuneService(db=Session())  # Remove this line
 
 @router.post("", response_model=ChatResponse)
-def chat_with_model(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_with_model(request: ChatRequest, db: Session = Depends(get_db)):
     """
     Chat with a fine-tuned model.
     """
@@ -25,7 +25,7 @@ def chat_with_model(request: ChatRequest, db: Session = Depends(get_db)):
         # Create service with the request's db session
         finetune_service = FinetuneService(db=db)
         
-        response = finetune_service.chat_with_model(
+        response = await finetune_service.chat_with_model(
             request.model_id,
             request.message,
             request.chat_mode,

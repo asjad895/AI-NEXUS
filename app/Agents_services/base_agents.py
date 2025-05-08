@@ -87,7 +87,7 @@ class BaseAgent(ABC):
             
         messages = self._prepare_messages(system_prompt, user_input, chat_history)
         
-        raw_response = await self._get_llm_response_with_retry_async(messages)
+        raw_response = await self._get_llm_response_with_retry_async(messages,response_model)
         
         processed_response = self._process_response(raw_response, response_model)
         
@@ -124,7 +124,7 @@ class BaseAgent(ABC):
             raise
     
     @track
-    async def _get_llm_response_with_retry_async(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+    async def _get_llm_response_with_retry_async(self, messages: List[Dict[str, str]], response_model: Type[BaseModel]) -> Dict[str, Any]:
         """Get response from LLM with retry mechanism (async)"""
         retries = 0
         max_retries = self.max_retries
@@ -132,7 +132,7 @@ class BaseAgent(ABC):
         
         while True:
             try:
-                return await self._call_llm_api_async(messages)
+                return await self._call_llm_api_async(messages,response_model)
             except (requests.RequestException, ConnectionError, TimeoutError) as e:
                 retries += 1
                 if retries > max_retries:
@@ -144,33 +144,34 @@ class BaseAgent(ABC):
                 raise
     
     @abstractmethod
-    def _call_llm_api(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+    def _call_llm_api(self, messages: List[Dict[str, str]],response_model: Type[BaseModel]) -> Dict[str, Any]:
         """Call the LLM API - to be implemented by concrete agents"""
         pass
     
     @abstractmethod
-    async def _call_llm_api_async(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+    async def _call_llm_api_async(self, messages: List[Dict[str, str]],response_model: Type[BaseModel]) -> Dict[str, Any]:
         """Call the LLM API asynchronously - to be implemented by concrete agents"""
         pass
     
     @track
-    def _process_response(self, raw_response: Dict[str, Any], response_model: Type[BaseModel]) -> Dict[str, Any]:
+    def _process_response(self, raw_response: Dict[str, Any]) -> Dict[str, Any]:
         """Process and validate the response"""
         try:
             # Extract content from response
             content = self._extract_content(raw_response)
-            
-            # Validate with response model
-            validated_response = response_model(content=content)
-            
-            return validated_response.model_dump()
+            print(f"Content: {content}") #str to dict
+            # validated_response = response_model(**content)
+            return content
         except ValidationError as e:
             raise
     
     def _extract_content(self, raw_response: Dict[str, Any]) -> str:
         """Extract content from raw response - default implementation for OpenAI format"""
         try:
-            return raw_response.get("choices", [{}])[0].get("message", {}).get("content", "")
+            response = raw_response.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if isinstance(response,str):
+                response = json.loads(response)
+            return response
         except (KeyError, IndexError) as e:
             return ""
 

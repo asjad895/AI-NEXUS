@@ -116,12 +116,12 @@ st.markdown("""
         margin-bottom: 10px;
     }
     .user-message {
-        background-color: #E3F2FD;
+        # background-color: ;
         margin-left: 20%;
         margin-right: 5px;
     }
     .model-message {
-        background-color: #F5F5F5;
+        # background-color: #F5F5F5;
         margin-right: 20%;
         margin-left: 5px;
     }

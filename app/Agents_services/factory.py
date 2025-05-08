@@ -8,13 +8,13 @@ def create_agent(
     llm_provider: str, 
     api_key: str, 
     base_url: Optional[str] = None,
-    model: Optional[str] = None,
+    model: str = None,
     **kwargs
 ) -> BaseAgent:
     """Factory method to create the appropriate agent based on provider"""
     
     if llm_provider.lower() == "openai":
-        model = model or "gpt-3.5-turbo"
+        model = model
         return OpenAIAgent(llm_provider, api_key, base_url, model, **kwargs)
     elif llm_provider.lower() == "anthropic":
         model = model or "claude-2"

@@ -239,9 +239,9 @@ class FinetuneService:
                     chat_history.append((user_msg, assistant_msg))
                 llm_agent = create_agent(
                     llm_provider="openai",
-                    api_key = '',
-                    model = '',
-                    base_url = ""
+                    api_key = 'AIzaSyDqup56c1zet2r0ji9Yk1REot8GehO5Jac',
+                    model = 'gemini-2.0-flash',
+                    base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
                     )
                 vector_db = ChromaDBClient(
                     persistence_path="./chroma_db"

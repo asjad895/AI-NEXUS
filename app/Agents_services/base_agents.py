@@ -168,7 +168,7 @@ class BaseAgent(ABC):
     def _extract_content(self, raw_response: Dict[str, Any]) -> str:
         """Extract content from raw response - default implementation for OpenAI format"""
         try:
-            response = raw_response.get("choices", [{}])[0].get("message", {}).get("content", "")
+            response = raw_response.get("choices", [{}])[0].get("message", {})
             if isinstance(response,str):
                 response = json.loads(response)
             return response

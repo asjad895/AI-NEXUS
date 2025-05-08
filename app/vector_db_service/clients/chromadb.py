@@ -48,7 +48,6 @@ class ChromaDBClient(VectorDatabaseClient):
     def create_collection(self, collection_name: str, dimension: int) -> bool:
         """Create a new collection in ChromaDB."""
         try:
-            # Check if collection exists
             try:
                 collection = self._client.get_collection(name=collection_name)
                 self._collections[collection_name] = collection
@@ -85,9 +84,10 @@ class ChromaDBClient(VectorDatabaseClient):
                 raise ValueError(f"Collection {collection_name} not found: {e}")
         return self._collections[collection_name]
     
-    def ingest_documents(self, 
-                        collection_name: str, 
-                        documents: List[DocumentChunk]) -> bool:
+    def ingest_documents(
+        self, 
+        collection_name: str, 
+        documents: List[DocumentChunk]) -> bool:
         """Ingest multiple document chunks into ChromaDB."""
         try:
             collection = self._get_collection(collection_name)
@@ -104,6 +104,7 @@ class ChromaDBClient(VectorDatabaseClient):
                 documents=texts,
                 metadatas=metadatas
             )
+            print(f"Total documents in {collection_name}: {self.count_documents(collection_name)}")
             return True
         except Exception as e:
             print(f"Failed to ingest documents into {collection_name}: {e}")

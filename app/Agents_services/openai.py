@@ -19,7 +19,7 @@ class OpenAIAgent(BaseAgent):
             base_url=self.config.base_url
         )
         
-        response = client.chat.completions.create(
+        response = client.beta.chat.completions.parse(
             model=self.config.model,
             messages=messages,
             temperature=self.config.temperature,
@@ -39,7 +39,7 @@ class OpenAIAgent(BaseAgent):
             base_url=self.config.base_url
         )
         
-        response = await client.chat.completions.create(
+        response = await client.beta.chat.completions.parse(
             model=self.config.model,
             messages=messages,
             temperature=self.config.temperature,

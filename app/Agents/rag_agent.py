@@ -63,26 +63,12 @@ Guidelines for your responses:
 Remember, you are Nexus Assistant, and your purpose is to help users find information from their FAQ documents.
 """
 
-        self.greeting_prompt = """
-You are Nexus Assistant, a helpful and empathetic AI assistant for AI-Nexus.
-
-The user has greeted you or expressed gratitude. Respond naturally and warmly without citing any chunks.
-Be friendly but professional, and don't be overly verbose.
-
-If they've asked a question along with their greeting, let them know you'll try to help them with their question.
-"""
-
     @track
     async def ensure_collection_exists(self, user_id: str) -> bool:
         """
         Check if collection exists for user, if not create and populate it from FAQs
         """
         collection_name = f"{self.collection_prefix}{user_id}"
-        
-        # Check if collection exists
-        if self.vector_db.collection_exists(collection_name):
-            return True
-            
         # Create collection
         success = self.vector_db.create_collection(collection_name, self.embedding_dimension)
         if not success:
@@ -119,29 +105,6 @@ If they've asked a question along with their greeting, let them know you'll try 
         # Ingest chunks
         success = self.vector_db.ingest_documents(collection_name, chunks)
         return success
-    
-    @track
-    def is_greeting_or_gratitude(self, text: str) -> bool:
-        """
-        Check if the text is a simple greeting or expression of gratitude
-        """
-        greetings = [
-            "hello", "hi", "hey", "greetings", "good morning", "good afternoon", 
-            "good evening", "howdy", "what's up", "how are you"
-        ]
-        
-        gratitude = [
-            "thank", "thanks", "appreciate", "grateful", "thx"
-        ]
-        
-        text_lower = text.lower()
-        
-        # Check if it's a short message and contains greeting/gratitude terms
-        is_short = len(text.split()) < 10
-        has_greeting = any(g in text_lower for g in greetings)
-        has_gratitude = any(g in text_lower for g in gratitude)
-        
-        return is_short and (has_greeting or has_gratitude)
     
     @track
     async def enhance_query(self, query: str, chat_history: List[Tuple[str, str]] = None) -> List[str]:
@@ -221,19 +184,6 @@ If they've asked a question along with their greeting, let them know you'll try 
         """
         if chat_history is None:
             chat_history = []
-            
-        # Check if it's a simple greeting or gratitude
-        if self.is_greeting_or_gratitude(message):
-            response = await self.llm_agent.run_async(
-                system_prompt=self.greeting_prompt,
-                user_input=message,
-                chat_history=chat_history,
-                response_model=RAGResponse
-            )
-            return {
-                "content": response["answer"],
-                "cited_chunks": []
-            }
             
         # Search for relevant chunks using enhanced queries
         chunks = await self.search_relevant_chunks(user_id, message, chat_history)

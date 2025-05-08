@@ -4,17 +4,13 @@ API routes for chat-related endpoints.
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-
 from app.middleware.logger import logger
 from app.middleware.database import get_db
 from app.middleware.models import ChatRequest, ChatResponse
 from app.finetune_service.finetune import FinetuneService
 
-# Create router
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-# Don't initialize service with a session at module level
-# finetune_service = FinetuneService(db=Session())  # Remove this line
 
 @router.post("", response_model=ChatResponse)
 async def chat_with_model(request: ChatRequest, db: Session = Depends(get_db)):
@@ -22,7 +18,6 @@ async def chat_with_model(request: ChatRequest, db: Session = Depends(get_db)):
     Chat with a fine-tuned model.
     """
     try:
-        # Create service with the request's db session
         finetune_service = FinetuneService(db=db)
         
         response = await finetune_service.chat_with_model(

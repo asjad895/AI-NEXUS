@@ -6,7 +6,7 @@ import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
-from vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
+from app.vector_db_service.vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
 
 class ChromaDBClient(VectorDatabaseClient):
     """Client for ChromaDB vector database."""

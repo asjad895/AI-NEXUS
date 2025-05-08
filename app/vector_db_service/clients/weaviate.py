@@ -3,8 +3,7 @@ Weaviate Vector Database Client Implementation
 """
 from typing import List, Dict, Any, Optional
 import weaviate
-from vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
-
+from app.vector_db_service.vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
 class WeaviateDBClient(VectorDatabaseClient):
     """Client for Weaviate vector database."""
     

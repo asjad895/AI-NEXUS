@@ -7,8 +7,7 @@ import pickle
 import numpy as np
 import faiss
 from pathlib import Path
-
-from vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
+from app.vector_db_service.vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
 
 class FAISSDBClient(VectorDatabaseClient):
     """

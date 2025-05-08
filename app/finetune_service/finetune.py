@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 from app.middleware.logger import logger
 from app.middleware.database import FinetuneJob, ChatHistory
 from app.middleware.models import FinetuneStatus, FinetuneType, FinetuneRequest, FinetuneResponse
-
+from app.Agents_services.factory import create_agent
+from app.Agents.rag_agent import ConversationalRAGAgent
+from app.vector_db_service.clients.chromadb import ChromaDBClient
 class FinetuneService:
     def __init__(self, db: Session):
         """
@@ -209,7 +211,7 @@ class FinetuneService:
             logger.error(f"Error deleting fine-tuning job {job_id}: {str(e)}")
             raise e
 
-    def chat_with_model(self, model_id: str, message: str, chat_mode: str, user_id: str) -> Dict[str, Any]:
+    async def chat_with_model(self, model_id: str, message: str, chat_mode: str, user_id: str) -> Dict[str, Any]:
         """        
         Chat with a fine-tuned model.
         """        
@@ -220,18 +222,43 @@ class FinetuneService:
             job = self.db.query(FinetuneJob).filter(FinetuneJob.id == model_id).first()
             if not job or job.status != FinetuneStatus.COMPLETED:                
                 raise ValueError(f"Model {model_id} not found or not ready")
-                        
-            # In a real system, you would use the model to generate a response
-            # For demo purposes, we'll simulate this            
-            time.sleep(random.uniform(0.5, 1.5))
-                        
-            if chat_mode == "model":
-                response = f"This is a simulated response from the {job.model}-{job.type} model to your query: '{message}'"            
-            elif chat_mode == "rag":
-                response = f"This is a simulated RAG response using retrieval for your query: '{message}'"            
-            else:  # both
-                response = f"This is a combined response using both the {job.model}-{job.type} model and RAG for your query: '{message}'"            
             
+            if chat_mode == "model":
+                response = "Simulated response from the fine-tuned model."
+            
+            elif chat_mode == "rag":
+                chat_history_records = self.db.query(ChatHistory).filter(
+                    ChatHistory.user_id == user_id and ChatHistory.chat_mode == "rag"
+                    ).order_by(ChatHistory.timestamp.desc()).limit(10).all()
+                chat_history = []
+                for i in range(0, len(chat_history_records) - 1):
+                    if chat_history_records[i].role == "user":
+                        user_msg = chat_history_records[i].content
+                    else:
+                        assistant_msg = chat_history_records[i].content
+                    chat_history.append((user_msg, assistant_msg))
+                llm_agent = create_agent(
+                    llm_provider="openai",
+                    api_key = '',
+                    model = '',
+                    base_url = ""
+                    )
+                vector_db = ChromaDBClient(
+                    persistence_path="./chroma_db"
+                    )
+                rag_agent = ConversationalRAGAgent(
+                    llm_agent=llm_agent,
+                    vector_db_client=vector_db
+                    )
+                response = await rag_agent.chat(
+                    user_id=user_id,
+                    message=message,
+                    chat_history=chat_history
+                    )
+                
+            else: 
+                pass
+                        
             # Save to chat history            
             chat_entry = ChatHistory(
                 user_id=user_id,                

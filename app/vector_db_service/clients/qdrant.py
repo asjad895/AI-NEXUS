@@ -6,8 +6,7 @@ import qdrant_client
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
-
+from app.vector_db_service.vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
 class QdrantDBClient(VectorDatabaseClient):
     """Client for Qdrant vector database."""
     

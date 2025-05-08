@@ -4,6 +4,8 @@ Milvus Vector Database Client Implementation
 from typing import List, Dict, Any, Optional
 import random
 import string
+from app.vector_db_service.vector_database import VectorDatabaseClient, DocumentChunk, SearchResult
+
 from pymilvus import (
     connections,
     utility,

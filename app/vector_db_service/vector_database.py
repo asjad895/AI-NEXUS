@@ -4,7 +4,7 @@ Vector Database Service - Core Interfaces and Models
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Union
 import numpy as np
-from models import DocumentChunk, SearchResult
+from .models import DocumentChunk, SearchResult
 
 class VectorDatabaseClient(ABC):
     """Abstract interface for all vector database operations."""

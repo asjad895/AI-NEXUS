@@ -19,7 +19,7 @@ os.environ["OPIK_WORKSPACE"] = "asjad12"
 
 class LLMResponse(BaseModel):
     """Base response model that all specific response models should inherit from"""
-    content: str
+    answer: str
 
 class LLMProviderConfig(BaseModel):
     """Configuration for LLM provider"""

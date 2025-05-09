@@ -55,7 +55,7 @@ class SmartConversationAgent:
         self.system_prompt_template = """
 You are Nexus Assistant, a helpful and empathetic AI assistant for AI-Nexus.
 Your job is to have a natural conversation with the user while:
-1. Collecting lead data we need
+1. Collecting lead data we need ONLY If the user has not provided it before
 2. Answering any questions they might have using our knowledge base
 
 LEAD DATA TO COLLECT:
@@ -80,7 +80,7 @@ GUIDELINES:
 7. If all lead data is collected, focus on answering questions and providing value
 
 RESPONSE FORMAT:
-Your response must be a valid JSON object with these fields:
+Your response must be a valid JSON object with these fields OR ANY Provided:
 - query_answer: Answer to the user's query (null if no query was asked)
 - lead_data: Any lead data extracted from this message (null if none)
 - cited_chunks: List of chunk IDs you cited in your response (empty list if none)
@@ -150,12 +150,9 @@ Your response must be a valid JSON object with these fields:
         if chat_history is None:
             chat_history = []
             
-        
-        # Format lead data information
         formatted_lead_data_to_collect = self.format_lead_data_to_collect(next_lead_data)
         formatted_current_lead_data = self.format_current_lead_data(lead_data)
         
-        # Create system prompt
         system_prompt = self.system_prompt_template.format(
             lead_data_to_collect=formatted_lead_data_to_collect,
             current_lead_data=formatted_current_lead_data

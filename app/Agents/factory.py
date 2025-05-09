@@ -9,7 +9,8 @@ def create_smart_agent(
     vector_db_config: Dict[str, Any] = None,
     collection_prefix: str = "user_faq_",
     embedding_dimension: int = 384,
-    max_chunks: int = 5
+    max_chunks: int = 5,
+    agent_id: str = None
 ) -> SmartConversationAgent:
     """
     Factory method to create a SmartConversationAgent with the specified configuration

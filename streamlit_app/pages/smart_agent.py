@@ -77,7 +77,8 @@ def chat_with_smart_agent(agent_id, message, lead_data=None, next_lead_data=None
         "user_id": user_id or st.session_state.user_id,
         "message": message,
         "lead_data": lead_data,
-        "next_lead_data": next_lead_data
+        "next_lead_data": next_lead_data,
+        "chat_history": st.session_state.chat_messages
     }
     
     return api_request("POST", f"smart-conversation/{agent_id}", data=data)

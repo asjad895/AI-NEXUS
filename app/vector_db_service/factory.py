@@ -1,5 +1,5 @@
 
-from vector_database import VectorDatabaseClient
+from .vector_database import VectorDatabaseClient
 from typing import List, Optional, Dict, Any
 class VectorDBClientFactory:
     """Factory for creating vector database clients."""

@@ -44,7 +44,7 @@ def init_db():
 def api_request(method, endpoint, data=None, params=None):
     base_url = st.session_state.get("api_base_url", "http://localhost:8000")
     url = f"{base_url}/{endpoint}"
-    
+
     headers = {
         "Content-Type": "application/json"
     }
@@ -150,11 +150,9 @@ def create_smart_agent(agent_data):
                 "faq_job_ids": faq_job_ids
             }
             
-            # Call the ingest-faqs API
             ingest_response = api_request("POST", "smart-conversation/ingest-faqs", data=ingest_data)
             
             if ingest_response and "job_id" in ingest_response:
-                # Store the collection ID for tracking
                 st.session_state.collection_id = ingest_response["job_id"]
             else:
                 st.warning("FAQ ingestion was triggered but returned an unexpected response.")

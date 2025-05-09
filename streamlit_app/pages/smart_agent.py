@@ -12,7 +12,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session,sessionmaker
 import sqlalchemy as sa
 
-# Database setup
 Base = declarative_base()
 
 class SmartAgent(Base):
@@ -72,7 +71,6 @@ def api_request(method, endpoint, data=None, params=None):
         st.error(f"Error connecting to API: {str(e)}")
         return None
 
-# Chat with smart agent
 def chat_with_smart_agent(agent_id, message, lead_data=None, next_lead_data=None, user_id=None):
     data = {
         "user_id": user_id or st.session_state.user_id,
@@ -84,7 +82,6 @@ def chat_with_smart_agent(agent_id, message, lead_data=None, next_lead_data=None
     
     return api_request("POST", f"smart-conversation/{agent_id}", data=data)
 
-# Initialize session state
 def init_session_state():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
@@ -224,7 +221,7 @@ def main():
             st.subheader("Vector Database")
             vector_db = st.selectbox(
                 "Vector Database",
-                options=["chromadb", "pinecone", "qdrant"],
+                options=["chromadb", "milvus", "qdrant","faiss","weaviate"],
                 help="Select the vector database for knowledge retrieval"
             )
             
@@ -294,7 +291,6 @@ def main():
                 }
             )
             
-            # Create button
             if st.button("Create Smart Agent"):
                 if not agent_name:
                     st.error("Agent name is required")

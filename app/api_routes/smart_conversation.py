@@ -7,11 +7,12 @@ import os
 import time
 from dotenv import load_dotenv
 from app.middleware.database import get_db, ChatHistory
-from app.middleware.models import Status, FAQPipelineResponse
+from app.middleware.models import Status
 from app.Agents_services.factory import create_agent
 from app.Agents.factory import create_smart_agent
 from app.Agents.smart_conversation_agent import SmartConversationAgent
-from sqlalchemy import create_engine, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import uuid
 
 router = APIRouter(
@@ -39,6 +40,12 @@ class FAQIngestRequest(BaseModel):
     agent_id: str
     user_id: str
     faq_job_ids: List[str]
+class FAQIngestResponse(BaseModel):
+    job_id: str
+    status: Status
+    message: Optional[str] = None
+    created_at: datetime = None
+    updated_at: datetime = None
 
 @router.post("/{agent_id}", response_model=SmartConversationResponse)
 async def chat_with_smart_agent(
@@ -103,7 +110,7 @@ async def chat_with_smart_agent(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error chatting with smart agent: {str(e)}")
 
-@router.post("/ingest-faqs", response_model=FAQPipelineResponse)
+@router.post("/ingest-faqs", response_model=FAQIngestResponse)
 async def ingest_faqs(
     request: FAQIngestRequest,
     background_tasks: BackgroundTasks,
@@ -140,7 +147,7 @@ async def ingest_faqs(
             }
         )
         
-        return FAQPipelineResponse(
+        return FAQIngestResponse(
             job_id=collection_id, 
             status=Status.PENDING,
             message="FAQ ingestion job submitted",
@@ -234,7 +241,7 @@ def process_faq_ingest_background(collection_details: Dict):
         db.close()
         agent_db.close()
 
-@router.get("/collection/{collection_id}", response_model=FAQPipelineResponse)
+@router.get("/collection/{collection_id}", response_model=FAQIngestResponse)
 def get_collection_status(collection_id: str, db: Session = Depends(get_db)):
     """
     Get status of a specific collection.
@@ -244,7 +251,7 @@ def get_collection_status(collection_id: str, db: Session = Depends(get_db)):
     if not collection:
         raise HTTPException(status_code=404, detail=f"Collection with ID {collection_id} not found")
     
-    return FAQPipelineResponse(
+    return FAQIngestResponse(
         job_id=collection.id,
         status=Status(collection.status),
         message=collection.message,

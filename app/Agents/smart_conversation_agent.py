@@ -40,14 +40,12 @@ class SmartConversationAgent:
         self, 
         llm_agent: BaseAgent,
         vector_db_client: Optional[ChromaDBClient] = None,
-        collection_prefix: str = "user_faq_",
         embedding_dimension: int = 384,
         max_chunks: int = 5
     ):
         self.llm_agent = llm_agent
         self.vector_db = vector_db_client or ChromaDBClient(persistence_path="./chroma_db")
         self.vector_db.connect()
-        self.collection_prefix = collection_prefix
         self.embedding_dimension = embedding_dimension
         self.max_chunks = max_chunks
         self.db = SessionLocal()
@@ -88,11 +86,10 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
 """
     
     @track
-    async def search_knowledge_base(self, user_id: str, query: str, chat_history: List[Tuple[str, str]] = None) -> List[SearchResult]:
+    async def search_knowledge_base(self, user_id: str, query: str, chat_history: List[Tuple[str, str]] = None,collection_name = None) -> List[SearchResult]:
         """
         Search for relevant chunks in the vector database using enhanced queries
         """
-        collection_name = f"{self.collection_prefix}{user_id}"
         model = self.embedding_model
         query_embedding = model.encode(query).tolist()
         results = self.vector_db.search(
@@ -142,7 +139,8 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         message: str, 
         lead_data: Dict[str, Any], 
         next_lead_data: Dict[str, str],
-        chat_history: List[Tuple[str, str]] = None
+        chat_history: List[Dict[str, str]] = None,
+        collection_name: str = None
     ) -> Dict[str, Any]:
         """
         Process a user message, extract lead data, and answer queries
@@ -186,7 +184,21 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
             tools=tools,
             response_model=SmartConversationResponse
         )
-        
+        # tool call check
+        while 'tool_calls' in response:
+            for tool_call in response['tool_calls']:
+                if tool_call['name'] == 'search_knowledge_base':
+                    query = tool_call['arguments']['query']
+                    search_results = await self.search_knowledge_base(user_id, query, chat_history,collection_name)
+                    chat_history.append(({"role":"tool","content":json.dumps(search_results)}))
+                    response = await self.llm_agent.run_async(
+                        system_prompt=system_prompt,
+                        user_input=message,
+                        chat_history=chat_history,
+                        tools=tools,
+                        response_model=SmartConversationResponse
+                    )
+                    
         result = {
             "query_answer": response.get("query_answer"),
             "lead_data": response.get("lead_data"),
@@ -202,7 +214,8 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         message: str, 
         lead_data: Dict[str, Any] = None, 
         next_lead_data: Dict[str, str] = None,
-        chat_history: List[Tuple[str, str]] = None
+        chat_history: List[Tuple[str, str]] = None,
+        collection_name: str = None
     ) -> Dict[str, Any]:
         """
         Main method to chat with the smart conversation agent
@@ -218,7 +231,8 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
             message=message,
             lead_data=lead_data,
             next_lead_data=next_lead_data,
-            chat_history=chat_history
+            chat_history=chat_history,
+            collection_name=collection_name
         )
         
         return result

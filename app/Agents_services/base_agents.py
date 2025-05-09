@@ -79,7 +79,8 @@ class BaseAgent(ABC):
         system_prompt: str, 
         user_input: str, 
         chat_history: List[Tuple[str, str]] = None, 
-        response_model: Type[BaseModel] = LLMResponse
+        response_model: Type[BaseModel] = LLMResponse,
+        tools:List[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Asynchronous template method that defines the algorithm's skeleton"""
         if chat_history is None:
@@ -87,7 +88,7 @@ class BaseAgent(ABC):
             
         messages = self._prepare_messages(system_prompt, user_input, chat_history)
         
-        raw_response = await self._get_llm_response_with_retry_async(messages,response_model)
+        raw_response = await self._get_llm_response_with_retry_async(messages,response_model,tools)
         
         processed_response = self._process_response(raw_response, response_model)
         
@@ -102,10 +103,13 @@ class BaseAgent(ABC):
         """Prepare messages in OpenAI format"""
         messages = [{"role": "system", "content": system_prompt}]
         
-        for user_msg, assistant_msg in chat_history:
-            messages.append({"role": "user", "content": user_msg})
-            messages.append({"role": "assistant", "content": assistant_msg})
-        
+        for msg in chat_history:
+            if msg["role"] == "tool":
+                messages.append({"role": "tool", "content": msg["content"]})
+            elif msg["role"] == "user":
+                messages.append({"role": "user", "content": msg["content"]})
+            elif msg["role"] == "assistant":
+                messages.append({"role": "assistant", "content": msg["content"]})
         messages.append({"role": "user", "content": user_input})
         
         return messages
@@ -124,7 +128,7 @@ class BaseAgent(ABC):
             raise
     
     @track
-    async def _get_llm_response_with_retry_async(self, messages: List[Dict[str, str]], response_model: Type[BaseModel]) -> Dict[str, Any]:
+    async def _get_llm_response_with_retry_async(self, messages: List[Dict[str, str]], response_model: Type[BaseModel],tools:List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Get response from LLM with retry mechanism (async)"""
         retries = 0
         max_retries = self.max_retries
@@ -132,7 +136,7 @@ class BaseAgent(ABC):
         
         while True:
             try:
-                return await self._call_llm_api_async(messages,response_model)
+                return await self._call_llm_api_async(messages,response_model,tools)
             except (requests.RequestException, ConnectionError, TimeoutError) as e:
                 retries += 1
                 if retries > max_retries:
@@ -149,7 +153,7 @@ class BaseAgent(ABC):
         pass
     
     @abstractmethod
-    async def _call_llm_api_async(self, messages: List[Dict[str, str]],response_model: Type[BaseModel]) -> Dict[str, Any]:
+    async def _call_llm_api_async(self, messages: List[Dict[str, str]],response_model: Type[BaseModel],tools:List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Call the LLM API asynchronously - to be implemented by concrete agents"""
         pass
     

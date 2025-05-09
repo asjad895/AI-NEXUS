@@ -69,6 +69,21 @@ class ChatHistory(Base):
     chat_mode = Column(String, default="model")
     timestamp = Column(DateTime, default=datetime.now)
 
+class Collection(Base):
+    __tablename__ = "collections"
+    
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, index=True)
+    agent_id = Column(String, index=True)
+    name = Column(String, unique=True)
+    faq_job_ids = Column(String)  # Comma-separated list of FAQ job IDs
+    status = Column(String)
+    message = Column(Text, nullable=True)
+    document_count = Column(Integer, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    completed_at = Column(DateTime, nullable=True)
+
 Base.metadata.create_all(bind=engine)
 
 def get_db():

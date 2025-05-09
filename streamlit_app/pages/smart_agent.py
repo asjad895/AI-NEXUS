@@ -29,8 +29,9 @@ class SmartAgent(Base):
     vector_db = Column(String, nullable=False, default="chromadb")
     temperature = Column(Float, nullable=False, default=0.7)
     max_tokens = Column(Integer, nullable=True)
-    faq_job_ids = Column(String, nullable=True)  
-    lead_data_fields = Column(JSON, nullable=False)
+    faq_job_ids = Column(String, nullable=True) 
+    collection_name = Column(String, nullable=True) 
+    lead_data_fields = Column(JSON, nullable=False)  
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     is_active = Column(Boolean, nullable=False, default=True)
@@ -111,32 +112,63 @@ def get_smart_agent(agent_id):
     db = init_db()
     return db.query(SmartAgent).filter(SmartAgent.id == agent_id).first()
 
+def check_collection_status(collection_id):
+    """Check the status of a FAQ collection ingestion job"""
+    response = api_request("GET", f"smart-conversation/collection/{collection_id}")
+    return response
+
 def create_smart_agent(agent_data):
     db = init_db()
     agent_id = str(uuid.uuid4())
     
-    new_agent = SmartAgent(
-        id=agent_id,
-        name=agent_data["name"],
-        user_id=agent_data["user_id"],
-        description=agent_data.get("description", ""),
-        llm_provider=agent_data["llm_provider"],
-        model=agent_data["model"],
-        base_url=agent_data.get("base_url"),
-        api_key=agent_data.get("api_key"),
-        vector_db=agent_data.get("vector_db", "chromadb"),
-        temperature=agent_data.get("temperature", 0.7),
-        max_tokens=agent_data.get("max_tokens"),
-        faq_job_ids=",".join(agent_data.get("faq_job_ids", [])),
-        lead_data_fields=agent_data["lead_data_fields"],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        is_active=True
-    )
-    
-    db.add(new_agent)
-    db.commit()
-    return agent_id
+    try:
+        # Create the agent in the database
+        new_agent = SmartAgent(
+            id=agent_id,
+            name=agent_data["name"],
+            user_id=agent_data["user_id"],
+            description=agent_data.get("description", ""),
+            llm_provider=agent_data["llm_provider"],
+            model=agent_data["model"],
+            base_url=agent_data.get("base_url"),
+            api_key=agent_data.get("api_key"),
+            vector_db=agent_data.get("vector_db", "chromadb"),
+            temperature=agent_data.get("temperature", 0.7),
+            max_tokens=agent_data.get("max_tokens"),
+            lead_data_fields=agent_data["lead_data_fields"],
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            is_active=True
+        )
+        
+        db.add(new_agent)
+        db.commit()
+        
+        # If FAQ job IDs are provided, trigger the ingest-faqs API
+        faq_job_ids = agent_data.get("faq_job_ids", [])
+        if faq_job_ids:
+            ingest_data = {
+                "agent_id": agent_id,
+                "user_id": agent_data["user_id"],
+                "faq_job_ids": faq_job_ids
+            }
+            
+            # Call the ingest-faqs API
+            ingest_response = api_request("POST", "smart-conversation/ingest-faqs", data=ingest_data)
+            
+            if ingest_response and "job_id" in ingest_response:
+                # Store the collection ID for tracking
+                st.session_state.collection_id = ingest_response["job_id"]
+            else:
+                st.warning("FAQ ingestion was triggered but returned an unexpected response.")
+        
+        return agent_id
+    except Exception as e:
+        db.rollback()
+        st.error(f"Error creating smart agent: {str(e)}")
+        return None
+    finally:
+        db.close()
 
 def main():
     st.set_page_config(
@@ -411,3 +443,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+

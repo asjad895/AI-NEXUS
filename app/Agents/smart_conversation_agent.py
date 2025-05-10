@@ -220,7 +220,7 @@ assistant:
                                 "score": result.score
                             })
                         
-                        chat_history.append({"role":"assistant","content":None,"tool_calls":response['message'].tool_calls})
+                        # chat_history.append({"role":"assistant","content":"","tool_calls":response['message'].tool_calls})
                         chat_history.append({
                             "role": "tool", 
                             "content": json.dumps(formatted_results,indent = 2),

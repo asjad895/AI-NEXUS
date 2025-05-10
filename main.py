@@ -16,14 +16,12 @@ os.environ["OPIK_WORKSPACE"] = "asjad12"
 os.environ["OPIK_PROJECT_NAME"] = "AI_NEXUS"
 from app.api_routes import faq, finetune, chat, compare, health, rag_chat, smart_conversation
 
-# Create FastAPI app
 app = FastAPI(
     title="GEN-AI Pipeline API",
     description="API for end to end faq, fine-tuning, rag, chat and analysis",
     version="1.0.0"
 )
 
-# Register middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,11 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # app.add_middleware(PrometheusMiddleware)
-
-# Register exception handlers
 register_exception_handlers(app)
 
-# Include routers
 app.include_router(faq.router)
 app.include_router(finetune.router)
 app.include_router(chat.router)

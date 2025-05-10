@@ -8,7 +8,6 @@ import time
 from dotenv import load_dotenv
 from app.middleware.database import get_db, ChatHistory
 from app.middleware.models import Status
-from app.Agents_services.factory import create_agent
 from app.Agents.factory import create_smart_agent
 from app.Agents.smart_conversation_agent import SmartConversationAgent
 from sqlalchemy import create_engine
@@ -18,7 +17,6 @@ from opik import track
 from fastapi import Body
 
 router = APIRouter(
-    prefix="/smart-conversation",
     tags=["smart-conversation"],
     responses={404: {"description": "Not found"}},
 )
@@ -26,8 +24,9 @@ router = APIRouter(
 class SmartConversationRequest(BaseModel):
     user_id: str
     message: str
+    agent_id: str
     lead_data: Optional[Dict[str, Any]] = None
-    next_lead_data: Optional[Dict[str, str]] = None
+    missing_lead_data: Optional[Dict[str, str]] = None
     chat_history: Optional[List[Dict[str, str]]] = None
 
 class SmartConversationResponse(BaseModel):
@@ -48,10 +47,9 @@ class FAQIngestResponse(BaseModel):
     created_at: datetime = None
     updated_at: datetime = None
 
-@router.post("/{agent_id}", response_model=SmartConversationResponse)
+@router.post("/smart_chat/chat", response_model=SmartConversationResponse)
 async def chat_with_smart_agent(
-    request: SmartConversationRequest = Body(...),
-    agent_id: str = Path(..., description="Agent ID")
+    request: SmartConversationRequest = Body(...)
 ):
     """
     Chat with the smart conversation agent that can collect lead data and answer queries
@@ -60,7 +58,7 @@ async def chat_with_smart_agent(
         start_time = time.time()
         
         # agent details
-        smart_db_url = os.getenv("AGENT_DB_URL")
+        smart_db_url = os.getenv("AGENT_DB_URL",'sqlite:///smart_agents.db')
         agent_engine = create_engine(smart_db_url)
         AgentSession = sessionmaker(bind=agent_engine)
         agent_db = AgentSession()
@@ -70,14 +68,8 @@ async def chat_with_smart_agent(
         if not agent_details:
             raise HTTPException(status_code=404, detail=f"Smart agent with ID {agent_id} not found")
 
-        agent = create_agent(
-            llm_provider = agent_details.llm_provider,
-            api_key = agent_details.api_key,
-            model= agent_details.model,
-            base_url = agent_details.base_url
-        )
         smart_agent = create_smart_agent(
-            llm_agent = agent,
+            agent_details = agent_details,
             vector_db_type= agent_details.vector_db,
             vector_db_config={"persistence_path": "./chroma_db"},
             agent_id=agent_id
@@ -95,7 +87,7 @@ async def chat_with_smart_agent(
             user_id=request.user_id,
             message=request.message,
             lead_data=request.lead_data,
-            next_lead_data=request.next_lead_data,
+            missing_lead_data=request.missing_lead_data,
             chat_history=prev_messages,
             collection_name = f"agent_{agent_id}_faqs"
         )
@@ -114,9 +106,16 @@ async def chat_with_smart_agent(
 @router.post("/ingest", response_model=FAQIngestResponse)
 async def ingest_faqs(
     background_tasks: BackgroundTasks,
-    request : FAQIngestRequest = Body(...),
+    agent_id: str = Body(...),
+    user_id: str = Body(...),
+    faq_job_ids: List[str] = Body(...),
     db: Session = Depends(get_db)
 ):
+    request = FAQIngestRequest(
+        agent_id=agent_id,
+        user_id=user_id,
+        faq_job_ids=faq_job_ids
+    )
     """
     Ingest FAQs for a smart agent and create vector database collection
     """

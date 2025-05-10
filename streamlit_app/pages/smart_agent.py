@@ -71,15 +71,17 @@ def api_request(method, endpoint, data=None, params=None):
         st.error(f"Error connecting to API: {str(e)}")
         return None
 
-def chat_with_smart_agent(agent_id, message, lead_data=None, next_lead_data=None, user_id=None):
+def chat_with_smart_agent(agent_id, message, lead_data=None, missing_lead_data=None, user_id=None):
     data = {
         "user_id": user_id or st.session_state.user_id,
         "message": message,
+        "agent_id": agent_id,
         "lead_data": lead_data,
+        "missing_lead_data": missing_lead_data,
         "chat_history": st.session_state.chat_messages
     }
     
-    return api_request("POST", f"smart-conversation/{agent_id}", data=data)
+    return api_request("POST", f"smart_chat/chat", data=data)
 
 def init_session_state():
     if "user_id" not in st.session_state:
@@ -105,7 +107,7 @@ def get_smart_agent(agent_id):
 
 def check_collection_status(collection_id):
     """Check the status of a FAQ collection ingestion job"""
-    response = api_request("GET", f"smart-conversation/collection/{collection_id}")
+    response = api_request("GET", f"/collection/{collection_id}")
     return response
 
 def create_smart_agent(agent_data):
@@ -143,7 +145,7 @@ def create_smart_agent(agent_data):
                 "faq_job_ids": faq_job_ids
             }
             print(f"Ingest data: {ingest_data}")
-            ingest_response = api_request("POST", "smart-conversation/ingest", data=ingest_data)
+            ingest_response = api_request("POST", "/ingest", data=ingest_data)
             
             if ingest_response and "job_id" in ingest_response:
                 st.session_state.collection_id = ingest_response["job_id"]
@@ -334,7 +336,7 @@ def main():
                         st.write(f"**LLM Provider:** {agent.llm_provider}")
                         st.write(f"**Model:** {agent.model}")
                         st.write(f"**Vector DB:** {agent.vector_db}")
-                        st.session_state.next_lead_data = agent.lead_data_fields
+                        st.session_state.missing_lead_data = agent.lead_data_fields
         
         if st.button("Refresh Chat"):
             st.session_state.chat_messages = []
@@ -346,7 +348,7 @@ def main():
     if st.session_state.selected_agent:
         agent = get_smart_agent(st.session_state.selected_agent)
         if agent:
-            st.subheader(f"Chatting with: {agent.name}")
+            st.subheader(f":robot: Chatting with: {agent.name}")
             
             chat_container = st.container()
             
@@ -368,7 +370,7 @@ def main():
                         agent_id=st.session_state.selected_agent,
                         message=user_input,
                         lead_data=st.session_state.current_lead_data,
-                        next_lead_data=st.session_state.next_lead_data,
+                        missing_lead_data=st.session_state.missing_lead_data,
                         user_id=st.session_state.user_id
                     )
                     
@@ -377,6 +379,9 @@ def main():
                             for key, value in response["lead_data"].items():
                                 if value:
                                     st.session_state.current_lead_data[key] = value
+                                    # remove this key from missing_lead_data
+                                    if key in st.session_state.missing_lead_data:
+                                        del st.session_state.missing_lead_data[key]
                         
                         with st.chat_message("assistant"):
                             st.write(response["response"])

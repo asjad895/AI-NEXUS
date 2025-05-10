@@ -106,14 +106,14 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         return sorted_results[:self.max_chunks]
     
     @track
-    def format_lead_data_to_collect(self, next_lead_data: Dict[str, str]) -> str:
+    def format_lead_data_to_collect(self, missing_lead_data: Dict[str, str]) -> str:
         """
         Format the lead data that needs to be collected
         """
-        if not next_lead_data:
+        if not missing_lead_data:
             return "All lead data has been collected."
         formatted_data = []
-        for field, description in next_lead_data.items():
+        for field, description in missing_lead_data.items():
             formatted_data.append(f"- {field}: {description}")
         return "\n".join(formatted_data)
     
@@ -138,7 +138,7 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         user_id: str, 
         message: str, 
         lead_data: Dict[str, Any], 
-        next_lead_data: Dict[str, str],
+        missing_lead_data: Dict[str, str],
         chat_history: List[Dict[str, str]] = None,
         collection_name: str = None
     ) -> Dict[str, Any]:
@@ -148,7 +148,7 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         if chat_history is None:
             chat_history = []
             
-        formatted_lead_data_to_collect = self.format_lead_data_to_collect(next_lead_data)
+        formatted_lead_data_to_collect = self.format_lead_data_to_collect(missing_lead_data)
         formatted_current_lead_data = self.format_current_lead_data(lead_data)
         
         system_prompt = self.system_prompt_template.format(
@@ -213,7 +213,7 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         user_id: str, 
         message: str, 
         lead_data: Dict[str, Any] = None, 
-        next_lead_data: Dict[str, str] = None,
+        missing_lead_data: Dict[str, str] = None,
         chat_history: List[Tuple[str, str]] = None,
         collection_name: str = None
     ) -> Dict[str, Any]:
@@ -222,15 +222,15 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         """
         if lead_data is None:
             lead_data = {}
-        if next_lead_data is None:
-            next_lead_data = {}
+        if missing_lead_data is None:
+            missing_lead_data = {}
             
         # Process the message
         result = await self.process_message(
             user_id=user_id,
             message=message,
             lead_data=lead_data,
-            next_lead_data=next_lead_data,
+            missing_lead_data=missing_lead_data,
             chat_history=chat_history,
             collection_name=collection_name
         )

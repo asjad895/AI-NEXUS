@@ -75,8 +75,8 @@ class Collection(Base):
     id = Column(String, primary_key=True, index=True)
     user_id = Column(String, index=True)
     agent_id = Column(String, index=True)
-    name = Column(String, unique=True)
-    faq_job_ids = Column(String)  # Comma-separated list of FAQ job IDs
+    name = Column(String)
+    faq_job_ids = Column(String)
     status = Column(String)
     message = Column(Text, nullable=True)
     document_count = Column(Integer, default=0)

@@ -11,7 +11,9 @@ from app.middleware.database import SessionLocal
 from metrics import PrometheusMiddleware
 from app.middleware.exceptions import register_exception_handlers
 
-# Import routers
+os.environ["OPIK_API_KEY"] = "2Rofpa7vTaP91PL7rkNlp8KHK" 
+os.environ["OPIK_WORKSPACE"] = "asjad12"
+os.environ["OPIK_PROJECT_NAME"] = "AI_NEXUS"
 from app.api_routes import faq, finetune, chat, compare, health, rag_chat, smart_conversation
 
 # Create FastAPI app

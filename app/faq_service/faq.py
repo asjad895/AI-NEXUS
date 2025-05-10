@@ -14,14 +14,11 @@ from app.middleware.database import FAQJob, FAQEntry
 from sqlalchemy.orm import Session
 from app.middleware.logger import logger
 
-os.environ["OPIK_API_KEY"] = "2Rofpa7vTaP91PL7rkNlp8KHK" 
-os.environ["OPIK_WORKSPACE"] = "asjad12"
-opik = Opik(project_name = 'faq_pipeline',api_key = '2Rofpa7vTaP91PL7rkNlp8KHK',workspace = 'asjad12')
 class FAQService(ABC):
     def __init__(self, db: Session):
         self.db = db
 
-    @track(name='extract_sections_and_faqs',project_name = 'faq_pipeline')
+    @track(name='extract_sections_and_faqs')
     def extract_sections_and_faqs(self, markdown_text: str) -> Tuple[List[str], List[dict]]:
         """
         Extract sections, questions, and answers from markdown text.
@@ -107,7 +104,7 @@ class FAQService(ABC):
             logger.error(f"Error extracting sections and FAQs: {str(e)}")
             raise e
     
-    @track(name="create_faq_dataset",project_name='faq_pipeline')
+    @track(name="create_faq_dataset")
     def create_faq_dataset(self,markdown_text: str, job_id: str, db_session: Session) -> FAQPipelineResponse:
         try:
             # Update job status to IN_PROGRESS
@@ -202,7 +199,7 @@ class FAQService(ABC):
             logger.error(f"Error reading file: {str(e)}")
             raise e
 
-    @track(name="process_faq_pipeline",project_name='faq_pipeline')
+    @track(name="process_faq_pipeline")
     def process_faq_pipeline(self, job_id: str, file_path: str) -> FAQPipelineResponse:
         """
         Background task to process FAQ pipeline.

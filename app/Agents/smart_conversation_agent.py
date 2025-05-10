@@ -69,7 +69,8 @@ You MUST validate the lead data provided by the user. If the lead data is not va
 number:number should be 10 digit with country code of 3 digit (like +916291259457), if not valid ask to give missing details
 email:email should be in valid format (like asjad@gmail.com), if not valid ask to give missing details
 money related data : ask currency for complete data.
-Any data which is not valid or meaningfull in practical world, ask to give missing details.
+Any data which is not valid or meaningful in practical world, ask to give missing details.
+IF data is validated, update lead_data in your lead_data output
 </lead_data_validation>
 TOOLS:
 You have access to the following tools:

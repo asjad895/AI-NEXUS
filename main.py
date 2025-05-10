@@ -1,6 +1,5 @@
 """
-Main module for the FAQ Pipeline REST API.
-This file integrates all components and starts the FastAPI application.
+Main module for the REST API.
 """
 
 import os
@@ -40,7 +39,6 @@ app.include_router(health.router)
 app.include_router(rag_chat.router)
 app.include_router(smart_conversation.router)
 
-# Root endpoint
 @app.get("/")
 async def root():
     return {"message": "Welcome to the FAQ Pipeline API! Check the documentation for available endpoints."}

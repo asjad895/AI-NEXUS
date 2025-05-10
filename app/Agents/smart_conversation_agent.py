@@ -51,10 +51,11 @@ class SmartConversationAgent:
         self.db = SessionLocal()
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.system_prompt_template = """
-You are Nexus Assistant, a helpful and empathetic AI assistant for AI-Nexus.
+You are Hiring Chatbot, a helpful and empathetic AI assistant.
 Your job is to have a natural conversation with the user while:
 1. Collecting lead data we need ONLY If the user has not provided it before
 2. Answering any questions they might have using our knowledge base
+3. Always use tool before saying you dont about this or like this.
 
 LEAD DATA TO COLLECT:
 {lead_data_to_collect}
@@ -71,18 +72,20 @@ search_knowledge_base: Search the knowledge base for information to answer user 
 GUIDELINES:
 1. Be conversational and natural - don't sound like a form
 2. Only ask for ONE piece of missing lead data at a time
-3. If the user asks a question, use the search_knowledge_base tool to find information
+3. If the user asks a query which shows a specific query, use the search_knowledge_base tool to find information
 4. When using information from the knowledge base, cite sources with numbers like (1), (2)
 5. Don't ask for information the user has already provided
 6. Extract any lead data the user provides, even if they volunteer it without being asked
 7. If all lead data is collected, focus on answering questions and providing value
+8. NEVER respond any query which does not supported or grounded by search_knowledge_base tool, instead guide user what they can ask.
+9. Analyze conversation history and if you find any ambiguity in user query, ask for clarification , update "lead_data" with the new information if provided else keep it same.
 
 RESPONSE FORMAT:
-Your response must be a valid JSON object with these fields OR ANY Provided:
-- query_answer: Answer to the user's query (null if no query was asked)
+Your response must be a valid JSON object which OUGHT to passed by auto json loader with these fields ONLY:
+- query_answer: Your next turn response apart from other key (lead_data,cited_chunks)
 - lead_data: Any lead data extracted from this message (null if none)
 - cited_chunks: List of chunk IDs you cited in your response (empty list if none)
-
+- If you are using tool then not need to return json object, just call the tool with arguments., once you get answer of query then return json object.
 """
     
     @track
@@ -155,7 +158,14 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
             lead_data_to_collect=formatted_lead_data_to_collect,
             current_lead_data=formatted_current_lead_data
         )
-        
+        system_prompt += "\n"+"""### Examples:-
+user: hi
+assistant:
+{
+    "query_answer": "Hello! How can I assist you today?",
+    "lead_data": null,
+    "cited_chunks": []
+}\n Do Not Append any key in query_answer,this is for your text response only,use other corresponding key"""
         # tools
         tools = [
             {
@@ -168,7 +178,7 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
                         "properties": {
                             "query": {
                                 "type": "string",
-                                "description": "The ambiguity resolved search query to find relevant information"
+                                "description": "The complete contextual sentence which should retrieve the best answer from the knowledge base"
                             }
                         },
                         "required": ["query"]
@@ -183,24 +193,25 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
                 user_input=message,
                 chat_history=chat_history,
                 tools=tools,
-                response_model=None  # Don't pass the response model
+                response_model=None
             )
             
             # tool call check
             while 'tool_calls' in response:
                 for tool_call in response['tool_calls']:
                     if tool_call['name'] == 'search_knowledge_base':
-                        # Parse the arguments
                         try:
                             arguments = json.loads(tool_call['arguments'])
                             query = arguments['query']
+                            tool_call_id = tool_call['id']
+                            tool_function_name = "search_knowledge_base"
                         except (json.JSONDecodeError, KeyError):
-                            # If parsing fails, try to extract the query directly
+                            tool_call_id = tool_call['id']
+                            tool_function_name = "search_knowledge_base"
                             query = tool_call['arguments'].strip('{}').split(':')[-1].strip(' "\'')
                         
                         search_results = await self.search_knowledge_base(user_id, query, chat_history, collection_name)
                         
-                        # Format search results for the LLM
                         formatted_results = []
                         for result in search_results:
                             formatted_results.append({
@@ -209,23 +220,22 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
                                 "score": result.score
                             })
                         
-                        # Add the tool response to chat history
+                        chat_history.append({"role":"assistant","content":None,"tool_calls":response['message'].tool_calls})
                         chat_history.append({
                             "role": "tool", 
-                            "content": json.dumps(formatted_results),
-                            "tool_call_id": tool_call['id']
+                            "content": json.dumps(formatted_results,indent = 2),
+                            "tool_call_id": tool_call_id,
+                            "name": tool_function_name
                         })
                         
-                        # Get the next response
                         response = await self.llm_agent.run_async(
                             system_prompt=system_prompt,
                             user_input=message,
                             chat_history=chat_history,
                             tools=tools,
-                            response_model=None  # Don't pass the response model
+                            response_model=None 
                         )
             
-            # Prepare the result
             result = {
                 "query_answer": response.get("query_answer"),
                 "lead_data": response.get("lead_data"),
@@ -259,7 +269,6 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
         if missing_lead_data is None:
             missing_lead_data = {}
             
-        # Process the message
         result = await self.process_message(
             user_id=user_id,
             message=message,

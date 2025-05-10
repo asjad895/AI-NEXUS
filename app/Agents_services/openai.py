@@ -41,7 +41,6 @@ class OpenAIAgent(BaseAgent):
             base_url=self.config.base_url
         )
         
-        # Set up response format for JSON output
         response_format = {"type": "json_object"}
         
         try:
@@ -51,8 +50,9 @@ class OpenAIAgent(BaseAgent):
                 messages=messages,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
-                response_format=response_format,
-                tools=tools
+                response_format=None,
+                tools=tools,
+                tool_choice="auto"
             )
             
             # Extract the response content
@@ -63,14 +63,10 @@ class OpenAIAgent(BaseAgent):
             parsed_content = {}
             if content:
                 try:
-                    parsed_content = json.loads(content)
+                    parsed_content = json.loads(content.replace("```",'').replace("json",''))
                 except json.JSONDecodeError:
                     parsed_content = {"query_answer": content}
-            
-            # Prepare the response
             result = parsed_content
-            
-            # Add tool calls if present
             if tool_calls:
                 result["tool_calls"] = []
                 for tool_call in tool_calls:
@@ -81,6 +77,7 @@ class OpenAIAgent(BaseAgent):
                         "arguments": tool_call.function.arguments
                     }
                     result["tool_calls"].append(tool_call_data)
+                result['message'] = response.choices[0].message
             
             return result
         except Exception as e:

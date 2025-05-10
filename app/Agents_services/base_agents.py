@@ -145,7 +145,7 @@ class BaseAgent(ABC):
                     raise
                 
                 await asyncio.sleep(wait_time)
-                wait_time = min(wait_time * 2, 10)  # Exponential backoff with max of 10 seconds
+                wait_time = min(wait_time * 2, 10)
             except Exception as e:
                 raise
     
@@ -163,30 +163,9 @@ class BaseAgent(ABC):
     def _process_response(self, raw_response: Dict[str, Any], response_model: Type[BaseModel]) -> Dict[str, Any]:
         """Process the raw response from the LLM"""
         try:
-            # Check if the response has tool calls
-            if 'tool_calls' in raw_response:
-                return raw_response
-            
-            # Extract content from the response
-            if 'choices' in raw_response and len(raw_response['choices']) > 0:
-                content = raw_response['choices'][0]['message']['content']
-            else:
-                content = raw_response.get('content', raw_response)
-            
-            # If content is a string, try to parse it as JSON
-            if isinstance(content, str):
-                try:
-                    parsed_content = json.loads(content)
-                    return parsed_content
-                except json.JSONDecodeError:
-                    # If parsing fails, wrap the content in the expected format
-                    return {"content": content}
-            else:
-                # If content is already a dict, return it
-                return content
+            pass
         except Exception as e:
             print(f"Error processing response: {str(e)}")
-            # Return a fallback response
             return {"content": "Error processing response"}
     
     def _extract_content(self, raw_response: Dict[str, Any]) -> str:

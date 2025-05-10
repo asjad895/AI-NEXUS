@@ -379,7 +379,7 @@ def main():
                             for key, value in response["lead_data"].items():
                                 if value:
                                     st.session_state.current_lead_data[key] = value
-                                    # remove this key from missing_lead_data
+                                    
                                     if key in st.session_state.missing_lead_data:
                                         del st.session_state.missing_lead_data[key]
                         

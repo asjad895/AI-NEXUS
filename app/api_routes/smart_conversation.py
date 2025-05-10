@@ -88,7 +88,7 @@ async def chat_with_smart_agent(
             collection_name = f"agent_{request.agent_id}_faqs"
         )
         processing_time = time.time() - start_time
-        
+        print(f"final response: {response}")
         return SmartConversationResponse(
             query_answer=response.get("query_answer"),
             lead_data=response.get("lead_data"),

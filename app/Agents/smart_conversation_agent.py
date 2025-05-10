@@ -64,7 +64,12 @@ CURRENT LEAD DATA:
 {current_lead_data}
 
 </lead_data>
-
+<lead_data_validation>
+You MUST validate the lead data provided by the user. If the lead data is not valid, ask the user to provide the correct data.
+number:number should be 10 digit with country code of 3 digit (like +916291259457), if not valid ask to give missing details
+email:email should be in valid format (like asjad@gmail.com), if not valid ask to give missing details
+money related data : ask currency for complete data.
+</lead_data_validation>
 TOOLS:
 You have access to the following tools:
 

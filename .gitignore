@@ -2,7 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+faq_pipline.db
+smart_agents.db
+Unilife/
 # C extensions
 *.so
 env/

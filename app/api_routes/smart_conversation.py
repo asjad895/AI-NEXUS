@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import uuid
 from opik import track
+from fastapi import Body
 
 router = APIRouter(
     prefix="/smart-conversation",
@@ -49,7 +50,7 @@ class FAQIngestResponse(BaseModel):
 
 @router.post("/{agent_id}", response_model=SmartConversationResponse)
 async def chat_with_smart_agent(
-    request: SmartConversationRequest,
+    request: SmartConversationRequest = Body(...),
     agent_id: str = Path(..., description="Agent ID")
 ):
     """
@@ -112,8 +113,8 @@ async def chat_with_smart_agent(
 
 @router.post("/ingest", response_model=FAQIngestResponse)
 async def ingest_faqs(
-    request : FAQIngestRequest,
     background_tasks: BackgroundTasks,
+    request : FAQIngestRequest = Body(...),
     db: Session = Depends(get_db)
 ):
     """

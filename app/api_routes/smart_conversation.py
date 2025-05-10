@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import time
 from dotenv import load_dotenv
+load_dotenv()
 from app.middleware.database import get_db, ChatHistory
 from app.middleware.models import Status
 from app.Agents.factory import create_smart_agent
@@ -63,25 +64,20 @@ async def chat_with_smart_agent(
         AgentSession = sessionmaker(bind=agent_engine)
         agent_db = AgentSession()
         from streamlit_app.pages.smart_agent import SmartAgent as StreamlitSmartAgent
-        agent_details = agent_db.query(StreamlitSmartAgent).filter(StreamlitSmartAgent.id == agent_id).first()
+        agent_details = agent_db.query(StreamlitSmartAgent).filter(StreamlitSmartAgent.id == request.agent_id).first()
             
         if not agent_details:
-            raise HTTPException(status_code=404, detail=f"Smart agent with ID {agent_id} not found")
+            raise HTTPException(status_code=404, detail=f"Smart agent with ID {request.agent_id} not found")
 
         smart_agent = create_smart_agent(
             agent_details = agent_details,
             vector_db_type= agent_details.vector_db,
             vector_db_config={"persistence_path": "./chroma_db"},
-            agent_id=agent_id
             
         )
         prev_messages = []
         for i in request.chat_history:
-            if i["role"] == "user":
-                user_msg = i["content"]
-            else:
-                assistant_msg = i["content"]
-            prev_messages.append((user_msg, assistant_msg))
+            prev_messages.append({"role": i["role"], "content": i["content"]})
         
         response = await smart_agent.chat(
             user_id=request.user_id,
@@ -89,7 +85,7 @@ async def chat_with_smart_agent(
             lead_data=request.lead_data,
             missing_lead_data=request.missing_lead_data,
             chat_history=prev_messages,
-            collection_name = f"agent_{agent_id}_faqs"
+            collection_name = f"agent_{request.agent_id}_faqs"
         )
         processing_time = time.time() - start_time
         

@@ -172,7 +172,6 @@ def display_lead_data_card(lead_data):
         "name": "👤", "email": "📧", "phone": "📱",
         "company": "🏢", "role": "👔", "requirements": "📝",
         "budget": "💰", "timeline": "⏱️",
-        # Additional icons for other possible fields
         "location": "📍", "skills": "🛠️", "expected_ctc": "💸",
         "current_company": "🏭", "current_ctc": "💵"
     }
@@ -207,7 +206,6 @@ def display_missing_lead_data(missing_data):
         "name": "👤", "email": "📧", "phone": "📱",
         "company": "🏢", "role": "👔", "requirements": "📝",
         "budget": "💰", "timeline": "⏱️",
-        # Additional icons for other possible fields
         "location": "📍", "skills": "🛠️", "expected_ctc": "💸",
         "current_company": "🏭", "current_ctc": "💵" 
     }
@@ -252,7 +250,6 @@ def main():
     with st.sidebar:
         st.title("🤖 Smart Agent Dashboard")
         
-        # Theme toggle
         theme_col1, theme_col2 = st.columns([3, 1])
         with theme_col1:
             st.write("Theme:")
@@ -487,7 +484,6 @@ def main():
     if st.session_state.selected_agent:
         agent = get_smart_agent(st.session_state.selected_agent)
         if agent:
-            # Improved header with emoji and styling
             st.markdown(f"""
             <h1 style="
                 text-align: center; 

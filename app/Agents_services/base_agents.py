@@ -12,11 +12,6 @@ import requests
 from pydantic import BaseModel, ValidationError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-# Initialize Opik for logging
-os.environ["OPIK_API_KEY"] = "2Rofpa7vTaP91PL7rkNlp8KHK" 
-os.environ["OPIK_WORKSPACE"] = "asjad12"
-# opik = Opik(project_name='agent_framework', api_key='2Rofpa7vTaP91PL7rkNlp8KHK', workspace='asjad12')
-
 class LLMResponse(BaseModel):
     """Base response model that all specific response models should inherit from"""
     answer: str
@@ -89,7 +84,8 @@ class BaseAgent(ABC):
         messages = self._prepare_messages(system_prompt, user_input, chat_history)
     
         raw_response = await self._get_llm_response_with_retry_async(messages, response_model, tools)
-    
+        from app.utils import fix_assistant_response
+        raw_response = fix_assistant_response(raw_response)
         if response_model:
             processed_response = self._process_response(raw_response, response_model)
             return processed_response

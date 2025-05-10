@@ -6,7 +6,8 @@ import openai
 from .base_agents import LLMResponse
 from pydantic import BaseModel
 import json
-
+import json
+import re
 class OpenAIAgent(BaseAgent):
     """Concrete implementation for OpenAI"""
     
@@ -83,4 +84,3 @@ class OpenAIAgent(BaseAgent):
         except Exception as e:
             print(f"Error calling OpenAI API: {str(e)}")
             raise
-

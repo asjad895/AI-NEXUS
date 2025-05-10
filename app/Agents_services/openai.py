@@ -10,7 +10,7 @@ import json
 class OpenAIAgent(BaseAgent):
     """Concrete implementation for OpenAI"""
     
-    @track
+    @track(type = 'llm')
     def _call_llm_api(self, messages: List[Dict[str, str]],response_model:Type[BaseModel],tools:List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Call the OpenAI API"""
         import openai

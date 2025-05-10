@@ -105,15 +105,8 @@ class BaseAgent(ABC):
         """Prepare messages in OpenAI format"""
         messages = [{"role": "system", "content": system_prompt}]
         
-        for msg in chat_history:
-            if msg["role"] == "tool":
-                messages.append({"role": "tool", "content": msg["content"]})
-            elif msg["role"] == "user":
-                messages.append({"role": "user", "content": msg["content"]})
-            elif msg["role"] == "assistant":
-                messages.append({"role": "assistant", "content": msg["content"]})
+        messages.extend(chat_history)
         messages.append({"role": "user", "content": user_input})
-        
         return messages
     
     @retry(

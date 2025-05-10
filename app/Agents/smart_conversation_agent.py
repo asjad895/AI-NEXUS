@@ -27,7 +27,7 @@ class LeadData(BaseModel):
 
 class SmartConversationResponse(BaseModel):
     """Response model for the smart conversation agent"""
-    query_answer: Optional[str] = Field(...,description="Answer to user's query, if any")
+    response: Optional[str] = Field(...,description="Answer to user's query, if any")
     lead_data: Optional[Dict[str, Any]] = Field(...,description="Lead data extracted from user's message")
     cited_chunks: List[Dict[str, Any]] = Field(...,default_factory=list, description="List of chunks cited in the response")
 
@@ -87,10 +87,10 @@ GUIDELINES:
 
 RESPONSE FORMAT:
 Your response must be a valid JSON object which OUGHT to passed by auto json loader with these fields ONLY:
-- query_answer: Your next turn response apart from other key (lead_data,cited_chunks)
-- lead_data: Updated users information (Refer <lead_data> tag)
-- cited_chunks: List of chunk IDs you cited in your response (empty list if none)
-- If you are using tool then not need to return json object, just call the tool with arguments., once you get answer of query then return json object.
+- response:<str, Your next turn question or answer to user's query, if any, NEVER add Josn structure in it or lead_data or any other key details>
+- lead_data: <Dict,Updated users information (Refer <lead_data> tag) based on conversation history>
+- cited_chunks: <List,List of chunk IDs you cited in your response (empty list if none)>
+- lead_data ought to be Non None If user has Given you any lead_data.
 """
     
     @track
@@ -167,10 +167,10 @@ Your response must be a valid JSON object which OUGHT to passed by auto json loa
 user: hi
 assistant:
 {
-    "query_answer": "Hello! How can I assist you today?",
-    "lead_data": null,
+    "response": "Hello! How can I assist you today?",
+    "lead_data": {"name":"asjad"},
     "cited_chunks": []
-}\n Do Not Append any key in query_answer,this is for your text response only,use other corresponding key"""
+}"""
         # tools
         tools = [
             {
@@ -193,6 +193,7 @@ assistant:
         ]
         
         try:
+            message +='\n Do not add any json structure in "response" key'
             response = await self.llm_agent.run_async(
                 system_prompt=system_prompt,
                 user_input=message,
@@ -242,7 +243,7 @@ assistant:
                         )
             
             result = {
-                "query_answer": response.get("query_answer"),
+                "response": response.get("response"),
                 "lead_data": response.get("lead_data"),
                 "cited_chunks": response.get("cited_chunks", [])
             }
@@ -251,7 +252,7 @@ assistant:
         except Exception as e:
             print(f"Error processing message: {str(e)}")
             return {
-                "query_answer": f"I'm sorry, I encountered an error while processing your message. Please try again later.",
+                "response": f"I'm sorry, I encountered an error while processing your message. Please try again later.",
                 "lead_data": None,
                 "cited_chunks": []
             }

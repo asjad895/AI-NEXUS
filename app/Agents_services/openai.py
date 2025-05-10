@@ -65,7 +65,7 @@ class OpenAIAgent(BaseAgent):
                 try:
                     parsed_content = json.loads(content.replace("```",'').replace("json",''))
                 except json.JSONDecodeError:
-                    parsed_content = {"query_answer": content}
+                    parsed_content = {"response": content}
             result = parsed_content
             if tool_calls:
                 result["tool_calls"] = []

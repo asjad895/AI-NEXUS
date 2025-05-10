@@ -31,7 +31,7 @@ class SmartConversationRequest(BaseModel):
     chat_history: Optional[List[Dict[str, str]]] = None
 
 class SmartConversationResponse(BaseModel):
-    query_answer: Optional[str] = None
+    response: Optional[str] = None
     lead_data: Optional[Dict[str, Any]] = None
     cited_chunks: List[Dict[str, Any]] = []
     processing_time: float
@@ -90,7 +90,7 @@ async def chat_with_smart_agent(
         processing_time = time.time() - start_time
         print(f"final response: {response}")
         return SmartConversationResponse(
-            query_answer=response.get("query_answer"),
+            response=response.get("response"),
             lead_data=response.get("lead_data"),
             cited_chunks=response.get("cited_chunks", []),
             processing_time=processing_time,

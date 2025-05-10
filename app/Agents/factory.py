@@ -29,7 +29,6 @@ def create_smart_agent(
     return SmartConversationAgent(
         llm_agent=agent,
         vector_db_client=vector_db,
-        collection_prefix=collection_prefix,
         embedding_dimension=embedding_dimension,
         max_chunks=max_chunks
     )

@@ -27,9 +27,9 @@ class LeadData(BaseModel):
 
 class SmartConversationResponse(BaseModel):
     """Response model for the smart conversation agent"""
-    query_answer: Optional[str] = Field(None, description="Answer to user's query, if any")
-    lead_data: Optional[Dict[str, Any]] = Field(None, description="Lead data extracted from user's message")
-    cited_chunks: List[Dict[str, Any]] = Field(default_factory=list, description="List of chunks cited in the response")
+    query_answer: Optional[str] = Field(...,description="Answer to user's query, if any")
+    lead_data: Optional[Dict[str, Any]] = Field(...,description="Lead data extracted from user's message")
+    cited_chunks: List[Dict[str, Any]] = Field(...,default_factory=list, description="List of chunks cited in the response")
 
 class SmartConversationAgent:
     """
@@ -177,35 +177,69 @@ Your response must be a valid JSON object with these fields OR ANY Provided:
             }
         ]
         
-        response = await self.llm_agent.run_async(
-            system_prompt=system_prompt,
-            user_input=message,
-            chat_history=chat_history,
-            tools=tools,
-            response_model=SmartConversationResponse
-        )
-        # tool call check
-        while 'tool_calls' in response:
-            for tool_call in response['tool_calls']:
-                if tool_call['name'] == 'search_knowledge_base':
-                    query = tool_call['arguments']['query']
-                    search_results = await self.search_knowledge_base(user_id, query, chat_history,collection_name)
-                    chat_history.append(({"role":"tool","content":json.dumps(search_results)}))
-                    response = await self.llm_agent.run_async(
-                        system_prompt=system_prompt,
-                        user_input=message,
-                        chat_history=chat_history,
-                        tools=tools,
-                        response_model=SmartConversationResponse
-                    )
-                    
-        result = {
-            "query_answer": response.get("query_answer"),
-            "lead_data": response.get("lead_data"),
-            "cited_chunks": response.get("cited_chunks", [])
-        }
-        
-        return result
+        try:
+            response = await self.llm_agent.run_async(
+                system_prompt=system_prompt,
+                user_input=message,
+                chat_history=chat_history,
+                tools=tools,
+                response_model=None  # Don't pass the response model
+            )
+            
+            # tool call check
+            while 'tool_calls' in response:
+                for tool_call in response['tool_calls']:
+                    if tool_call['name'] == 'search_knowledge_base':
+                        # Parse the arguments
+                        try:
+                            arguments = json.loads(tool_call['arguments'])
+                            query = arguments['query']
+                        except (json.JSONDecodeError, KeyError):
+                            # If parsing fails, try to extract the query directly
+                            query = tool_call['arguments'].strip('{}').split(':')[-1].strip(' "\'')
+                        
+                        search_results = await self.search_knowledge_base(user_id, query, chat_history, collection_name)
+                        
+                        # Format search results for the LLM
+                        formatted_results = []
+                        for result in search_results:
+                            formatted_results.append({
+                                "id": result.id,
+                                "text": result.text,
+                                "score": result.score
+                            })
+                        
+                        # Add the tool response to chat history
+                        chat_history.append({
+                            "role": "tool", 
+                            "content": json.dumps(formatted_results),
+                            "tool_call_id": tool_call['id']
+                        })
+                        
+                        # Get the next response
+                        response = await self.llm_agent.run_async(
+                            system_prompt=system_prompt,
+                            user_input=message,
+                            chat_history=chat_history,
+                            tools=tools,
+                            response_model=None  # Don't pass the response model
+                        )
+            
+            # Prepare the result
+            result = {
+                "query_answer": response.get("query_answer"),
+                "lead_data": response.get("lead_data"),
+                "cited_chunks": response.get("cited_chunks", [])
+            }
+            
+            return result
+        except Exception as e:
+            print(f"Error processing message: {str(e)}")
+            return {
+                "query_answer": f"I'm sorry, I encountered an error while processing your message. Please try again later.",
+                "lead_data": None,
+                "cited_chunks": []
+            }
     
     @track
     async def chat(

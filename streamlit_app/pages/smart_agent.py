@@ -384,7 +384,7 @@ def main():
                                         del st.session_state.missing_lead_data[key]
                         
                         with st.chat_message("assistant"):
-                            st.write(response["response"])
+                            st.write(response["query_answer"])
                             
                             if response.get("cited_chunks"):
                                 with st.expander("View Sources"):
@@ -392,7 +392,7 @@ def main():
                                         st.markdown(f"**Source {i+1}:**")
                                         st.markdown(chunk["text"])
                                         st.markdown("---")
-                        st.session_state.chat_messages.append({"role": "assistant", "content": response["response"]})
+                        st.session_state.chat_messages.append({"role": "assistant", "content": response["query_answer"]})
                     else:
                         st.error("Failed to get response from agent.")
     else:

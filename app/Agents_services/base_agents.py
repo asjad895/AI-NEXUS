@@ -78,21 +78,23 @@ class BaseAgent(ABC):
         self, 
         system_prompt: str, 
         user_input: str, 
-        chat_history: List[Tuple[str, str]] = None, 
-        response_model: Type[BaseModel] = LLMResponse,
-        tools:List[Dict[str, Any]] = None
+        chat_history: List[Dict[str, str]] = None, 
+        response_model: Type[BaseModel] = None,
+        tools: List[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Asynchronous template method that defines the algorithm's skeleton"""
         if chat_history is None:
             chat_history = []
-            
+        
         messages = self._prepare_messages(system_prompt, user_input, chat_history)
-        
-        raw_response = await self._get_llm_response_with_retry_async(messages,response_model,tools)
-        
-        processed_response = self._process_response(raw_response, response_model)
-        
-        return processed_response
+    
+        raw_response = await self._get_llm_response_with_retry_async(messages, response_model, tools)
+    
+        if response_model:
+            processed_response = self._process_response(raw_response, response_model)
+            return processed_response
+        else:
+            return raw_response
     
     def _prepare_messages(
         self, 
@@ -158,16 +160,34 @@ class BaseAgent(ABC):
         pass
     
     @track
-    def _process_response(self, raw_response: Dict[str, Any]) -> Dict[str, Any]:
-        """Process and validate the response"""
+    def _process_response(self, raw_response: Dict[str, Any], response_model: Type[BaseModel]) -> Dict[str, Any]:
+        """Process the raw response from the LLM"""
         try:
-            # Extract content from response
-            content = self._extract_content(raw_response)
-            print(f"Content: {content}") #str to dict
-            # validated_response = response_model(**content)
-            return content
-        except ValidationError as e:
-            raise
+            # Check if the response has tool calls
+            if 'tool_calls' in raw_response:
+                return raw_response
+            
+            # Extract content from the response
+            if 'choices' in raw_response and len(raw_response['choices']) > 0:
+                content = raw_response['choices'][0]['message']['content']
+            else:
+                content = raw_response.get('content', raw_response)
+            
+            # If content is a string, try to parse it as JSON
+            if isinstance(content, str):
+                try:
+                    parsed_content = json.loads(content)
+                    return parsed_content
+                except json.JSONDecodeError:
+                    # If parsing fails, wrap the content in the expected format
+                    return {"content": content}
+            else:
+                # If content is already a dict, return it
+                return content
+        except Exception as e:
+            print(f"Error processing response: {str(e)}")
+            # Return a fallback response
+            return {"content": "Error processing response"}
     
     def _extract_content(self, raw_response: Dict[str, Any]) -> str:
         """Extract content from raw response - default implementation for OpenAI format"""

@@ -30,7 +30,7 @@ class FAQEntryModel(BaseModel):
     answer: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Fine-tuning models
 class FinetuneType(str, Enum):

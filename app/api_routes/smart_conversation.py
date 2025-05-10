@@ -14,6 +14,7 @@ from app.Agents.smart_conversation_agent import SmartConversationAgent
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import uuid
+from opik import track
 
 router = APIRouter(
     prefix="/smart-conversation",
@@ -35,7 +36,6 @@ class SmartConversationResponse(BaseModel):
     processing_time: float
     timestamp: datetime = None
 
-# Add this new request model
 class FAQIngestRequest(BaseModel):
     agent_id: str
     user_id: str
@@ -110,9 +110,9 @@ async def chat_with_smart_agent(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error chatting with smart agent: {str(e)}")
 
-@router.post("/ingest-faqs", response_model=FAQIngestResponse)
+@router.post("/ingest", response_model=FAQIngestResponse)
 async def ingest_faqs(
-    request: FAQIngestRequest,
+    request : FAQIngestRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
@@ -124,6 +124,7 @@ async def ingest_faqs(
         collection_name = f"agent_{request.agent_id}_faqs"
         
         from app.middleware.database import Collection
+        from app.vector_db_service.factory import VectorDBClientFactory
         collection = Collection(
             id=collection_id,
             user_id=request.user_id,
@@ -135,7 +136,8 @@ async def ingest_faqs(
         )
         db.add(collection)
         db.commit()
-        
+        vector_db = VectorDBClientFactory()
+        client = vector_db.get_client(db_type="chromadb", persistence_path="./chroma_db")
         background_tasks.add_task(
             process_faq_ingest_background,
             collection_details={
@@ -143,7 +145,8 @@ async def ingest_faqs(
                 "agent_id": request.agent_id,
                 "user_id": request.user_id,
                 "faq_job_ids": request.faq_job_ids,
-                "collection_name": collection_name
+                "collection_name": collection_name,
+                "vector_db":client
             }
         )
         
@@ -157,6 +160,7 @@ async def ingest_faqs(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error submitting FAQ ingestion job: {str(e)}")
 
+@track
 def process_faq_ingest_background(collection_details: Dict):
     """
     Background task to process FAQ ingestion
@@ -184,8 +188,7 @@ def process_faq_ingest_background(collection_details: Dict):
         
         if not faq_entries:
             raise Exception(f"No FAQ entries found for the specified job IDs")
-        from app.vector_db_service.clients.chromadb import ChromaDBClient
-        vector_db = ChromaDBClient(persistence_path="./chroma_db")
+        vector_db = collection_details['vector_db']
         vector_db.connect()
         from sentence_transformers import SentenceTransformer
         model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -281,4 +284,5 @@ def list_collections(agent_id: str, db: Session = Depends(get_db)):
             } for collection in collections
         ]
     }
+
 

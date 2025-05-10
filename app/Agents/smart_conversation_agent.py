@@ -44,7 +44,7 @@ class SmartConversationAgent:
         max_chunks: int = 5
     ):
         self.llm_agent = llm_agent
-        self.vector_db = vector_db_client or ChromaDBClient(persistence_path="./chroma_db")
+        self.vector_db = vector_db_client
         self.vector_db.connect()
         self.embedding_dimension = embedding_dimension
         self.max_chunks = max_chunks

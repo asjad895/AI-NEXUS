@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 import os
 from sqlalchemy import create_engine, Column, String, JSON, DateTime, Boolean, Integer, Float, Text
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Session,sessionmaker
 import sqlalchemy as sa
 
@@ -76,7 +76,6 @@ def chat_with_smart_agent(agent_id, message, lead_data=None, next_lead_data=None
         "user_id": user_id or st.session_state.user_id,
         "message": message,
         "lead_data": lead_data,
-        "next_lead_data": next_lead_data,
         "chat_history": st.session_state.chat_messages
     }
     
@@ -92,19 +91,14 @@ def init_session_state():
     if "current_lead_data" not in st.session_state:
         st.session_state.current_lead_data = {}
     
-    if "next_lead_data" not in st.session_state:
-        st.session_state.next_lead_data = {}
-    
     if "selected_agent" not in st.session_state:
         st.session_state.selected_agent = None
 
-# Get all smart agents
 def get_all_smart_agents():
     db = init_db()
     agents = db.query(SmartAgent).filter(SmartAgent.is_active == True).all()
     return agents
 
-# Get smart agent by ID
 def get_smart_agent(agent_id):
     db = init_db()
     return db.query(SmartAgent).filter(SmartAgent.id == agent_id).first()
@@ -141,7 +135,6 @@ def create_smart_agent(agent_data):
         db.add(new_agent)
         db.commit()
         
-        # If FAQ job IDs are provided, trigger the ingest-faqs API
         faq_job_ids = agent_data.get("faq_job_ids", [])
         if faq_job_ids:
             ingest_data = {
@@ -149,8 +142,8 @@ def create_smart_agent(agent_data):
                 "user_id": agent_data["user_id"],
                 "faq_job_ids": faq_job_ids
             }
-            
-            ingest_response = api_request("POST", "smart-conversation/ingest-faqs", data=ingest_data)
+            print(f"Ingest data: {ingest_data}")
+            ingest_response = api_request("POST", "smart-conversation/ingest", data=ingest_data)
             
             if ingest_response and "job_id" in ingest_response:
                 st.session_state.collection_id = ingest_response["job_id"]
@@ -215,7 +208,6 @@ def main():
                 placeholder="Your API key"
             )
             
-            # Vector DB Configuration
             st.subheader("Vector Database")
             vector_db = st.selectbox(
                 "Vector Database",
@@ -223,7 +215,6 @@ def main():
                 help="Select the vector database for knowledge retrieval"
             )
             
-            # Generation Parameters
             st.subheader("Generation Parameters")
             temperature = st.slider(
                 "Temperature",
@@ -241,7 +232,6 @@ def main():
                 help="Maximum tokens to generate (0 for model default)"
             )
             
-            # FAQ Job IDs
             st.subheader("Knowledge Base")
             faq_job_ids = st.text_input(
                 "FAQ Job IDs (comma-separated)",
@@ -255,11 +245,9 @@ def main():
                 help="User ID associated with this agent"
             )
             
-            # Lead Data Fields
             st.subheader("Lead Data Fields")
             st.info("Define the lead data fields your agent should collect")
             
-            # Default lead data fields
             default_fields = {
                 "name": "Ask for the user's name",
                 "email": "Ask for the user's email address",
@@ -271,7 +259,6 @@ def main():
                 "timeline": "Ask about the user's timeline or deadline"
             }
             
-            # Create a dataframe for editing lead data fields
             lead_data_df = pd.DataFrame({
                 "Field": list(default_fields.keys()),
                 "Description": list(default_fields.values()),
@@ -297,13 +284,10 @@ def main():
                 elif not api_key:
                     st.error("API key is required")
                 else:
-                    # Process lead data fields
                     lead_data_fields = {}
                     for _, row in edited_df.iterrows():
                         if row["Include"]:
                             lead_data_fields[row["Field"]] = row["Description"]
-                    
-                    # Create agent data
                     agent_data = {
                         "name": agent_name,
                         "user_id": user_id,
@@ -318,25 +302,20 @@ def main():
                         "faq_job_ids": faq_job_ids.split(",") if faq_job_ids else [],
                         "lead_data_fields": lead_data_fields
                     }
-                    
-                    # Create agent
                     agent_id = create_smart_agent(agent_data)
                     if agent_id:
                         st.success(f"Smart Agent created successfully! ID: {agent_id}")
                         st.session_state.selected_agent = agent_id
-                        time.sleep(2)
+                        time.sleep(10)
                         st.rerun()
         
         with tab2:
             st.header("Select Smart Agent")
-            
-            # Get all agents
             agents = get_all_smart_agents()
             
             if not agents:
                 st.info("No smart agents found. Create one first!")
             else:
-                # Create a selectbox with agent names
                 agent_options = {f"{agent.name} ({agent.id})": agent.id for agent in agents}
                 selected_agent_name = st.selectbox(
                     "Select Agent",
@@ -347,8 +326,6 @@ def main():
                 if selected_agent_name:
                     selected_agent_id = agent_options[selected_agent_name]
                     st.session_state.selected_agent = selected_agent_id
-                    
-                    # Get agent details
                     agent = get_smart_agent(selected_agent_id)
                     if agent:
                         st.subheader("Agent Details")
@@ -357,17 +334,13 @@ def main():
                         st.write(f"**LLM Provider:** {agent.llm_provider}")
                         st.write(f"**Model:** {agent.model}")
                         st.write(f"**Vector DB:** {agent.vector_db}")
-                        
-                        # Set next lead data from agent configuration
                         st.session_state.next_lead_data = agent.lead_data_fields
         
-        # Refresh chat button
         if st.button("Refresh Chat"):
             st.session_state.chat_messages = []
             st.session_state.current_lead_data = {}
             st.rerun()
     
-    # Main content area
     st.title("Smart Conversation Agent")
     
     if st.session_state.selected_agent:
@@ -375,27 +348,21 @@ def main():
         if agent:
             st.subheader(f"Chatting with: {agent.name}")
             
-            # Chat interface
             chat_container = st.container()
             
-            # Display chat messages
             with chat_container:
                 for message in st.session_state.chat_messages:
                     with st.chat_message(message["role"]):
                         st.write(message["content"])
             
-            # User input
             user_input = st.chat_input("Type your message here...")
             
             if user_input:
-                # Add user message to UI
                 with st.chat_message("user"):
                     st.write(user_input)
                 
-                # Add to session state
                 st.session_state.chat_messages.append({"role": "user", "content": user_input})
                 
-                # Call API
                 with st.spinner("Agent is thinking..."):
                     response = chat_with_smart_agent(
                         agent_id=st.session_state.selected_agent,
@@ -406,29 +373,20 @@ def main():
                     )
                     
                     if response:
-                        # Update lead data
                         if response.get("lead_data"):
                             for key, value in response["lead_data"].items():
-                                if value:  # Only update if value is not None
+                                if value:
                                     st.session_state.current_lead_data[key] = value
                         
-                        # Update next lead data
-                        if response.get("next_lead_data"):
-                            st.session_state.next_lead_data = response["next_lead_data"]
-                        
-                        # Display assistant response
                         with st.chat_message("assistant"):
                             st.write(response["response"])
                             
-                            # If there are cited chunks, show them in an expander
                             if response.get("cited_chunks"):
                                 with st.expander("View Sources"):
                                     for i, chunk in enumerate(response["cited_chunks"]):
                                         st.markdown(f"**Source {i+1}:**")
                                         st.markdown(chunk["text"])
                                         st.markdown("---")
-                        
-                        # Add to session state
                         st.session_state.chat_messages.append({"role": "assistant", "content": response["response"]})
                     else:
                         st.error("Failed to get response from agent.")
@@ -437,6 +395,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

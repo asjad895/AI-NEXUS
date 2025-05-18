@@ -1,11 +1,12 @@
 import logging
 from typing import Annotated, Optional, List, Dict
+from livekit import api
 from dotenv import load_dotenv
-from livekit.agents import JobContext, WorkerOptions, cli,JobProcess
+from livekit.agents import JobContext, WorkerOptions, cli,JobProcess,get_job_context
 from livekit.agents.llm import function_tool
 from livekit.agents.voice import Agent, AgentSession, RunContext
-from livekit.agents.voice.room_io import RoomInputOptions
-from livekit.plugins import cartesia, deepgram, openai, silero,neuphonic
+from livekit.agents.voice.room_io import RoomInputOptions,RoomOutputOptions
+from livekit.plugins import cartesia, deepgram, openai, silero,google
 from livekit.agents import BackgroundAudioPlayer, AudioConfig, BuiltinAudioClip
 from livekit.agents import UserInputTranscribedEvent
 from app.Voice.livekit.plugins.sarvam_ai.tts import TTS as custom_sarvam_tts
@@ -21,11 +22,17 @@ from livekit.agents import metrics, MetricsCollectedEvent
 import os
 
 usage_collector = metrics.UsageCollector()
-llm=openai.LLM.with_cerebras(
-        model= os.getenv('VOICE_MODEL_CEREBRAS'),
-        api_key=os.getenv('CEREBRAS_API_KEY'),
+# llm=openai.LLM.with_cerebras(
+#         model= os.getenv('VOICE_MODEL_CEREBRAS'),
+#         api_key=os.getenv('CEREBRAS_API_KEY'),
+#         temperature=0.7,
+#         parallel_tool_calls=False,
+#     )
+
+llm = google.LLM(
+        api_key=os.getenv('GEMINI_API_KEY'),
+        model= os.getenv("GEMINI_LLM_MODEL"),
         temperature=0.7,
-        parallel_tool_calls=False,
     )
 
 stt = deepgram.STT(
@@ -95,7 +102,7 @@ class BaseAgent(Agent):
         current_agent = context.session.current_agent
         next_agent = userdata.agents[name]
         userdata.prev_agent = current_agent
-
+        logger.info(f"Transferring to {name}")
         return next_agent, f"Transferring to {name}."
 
 
@@ -200,6 +207,7 @@ class SpecialistAgent(BaseAgent):
                 "Guide patients to only ask healthcare and MG Care Health Solutions related queries Your interface "
                 "with users will be voice. You should use short and concise "
                 "responses, and avoiding usage of unpronouncable punctuation."
+                "Always use the search_knowledge_base tool to answer any queries related to MG Care Health Solutions."
             ),
             tools=[
                 update_pain_details, add_medication, add_symptom, 
@@ -207,6 +215,29 @@ class SpecialistAgent(BaseAgent):
                 add_lifestyle_factor, update_service_requested, add_notes
             ],
         )
+        
+        logger.info(
+            "switching to the  specialist agent with the provided"
+        )
+    # async def on_enter(self):
+    #     self.session.generate_reply()
+    @function_tool()
+    async def search_knowledge_base(
+        self,
+        context: RunContext,
+        query: str,
+        ) -> str:
+        """Search the knowledge base for information related to MG Solution's healthcare domain.
+        This tool should be used when a user asks any specific query related to the healthcare domain,
+        MG Solution's offerings, limitations, or services. It returns the most semantically
+        similar content chunks from the knowledge base to help answer healthcare-specific queries.
+    
+        Args:
+            query: The user's question about MG Solution's healthcare services, domain knowledge,coverage areas, or any healthcare-related inquiries.
+        
+        """
+        relevant_data = 'Currently we are updating our knowledge base. Please have patience we will have noted your queries  and some one will get back to you.'
+        return relevant_data
 
     @function_tool()
     async def to_summary(self, context: RunContext_T) -> tuple[Agent, str]:
@@ -228,6 +259,11 @@ class SummaryAgent(BaseAgent):
             ),
             tools=[],
         )
+        logger.info(
+            "switching to the  summary agent with the provided"
+        )
+    # async def on_enter(self) -> None:
+    #     await self.session.say()
 
     @function_tool()
     async def end_conversation(self, context: RunContext_T) -> str:
@@ -249,7 +285,12 @@ class SummaryAgent(BaseAgent):
         
         summary += "If you have any further questions, please don't hesitate to call us back. Thank you for trusting MG Care Health Solutions with your healthcare needs."
         
-        return summary
+        job_ctx = get_job_context()
+        current_speech = context.session.current_speech
+        if current_speech:
+            await current_speech.wait_for_playout()
+        await job_ctx.api.room.delete_room(api.DeleteRoomRequest(room=job_ctx.room.name))
+        
 
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
@@ -275,6 +316,7 @@ async def entrypoint(ctx: JobContext):
         # vad=silero.VAD.load(),
         vad = ctx.proc.userdata["vad"],
         max_tool_steps=5,
+        turn_detection=EnglishModel(),
     )
     
     @session.on("metrics_collected")
@@ -291,6 +333,7 @@ async def entrypoint(ctx: JobContext):
         agent=userdata.agents["greeter"],
         room=ctx.room,
         room_input_options=RoomInputOptions(),
+        room_output_options=RoomOutputOptions(transcription_enabled=True),
     )
 
 

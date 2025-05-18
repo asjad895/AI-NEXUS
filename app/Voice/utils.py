@@ -9,7 +9,8 @@ from pydantic import Field
 
 from livekit.agents.llm import function_tool
 from livekit.agents.voice import Agent, RunContext
-
+from opik import track
+# add track on all tool
 
 load_dotenv()
 
@@ -100,6 +101,7 @@ class MedicalData:
 RunContext_T = RunContext[MedicalData]
 
 
+@track
 @function_tool()
 async def update_name(
     name: Annotated[str, Field(description="The patient's full name")],
@@ -112,6 +114,7 @@ async def update_name(
     return f"Thank you, {name}. I've updated your name in our records."
 
 
+@track
 @function_tool()
 async def update_age(
     age: Annotated[int, Field(description="The patient's age in years")],
@@ -123,6 +126,7 @@ async def update_age(
     return f"Thank you for sharing that you are {age} years old."
 
 
+@track
 @function_tool()
 async def update_gender(
     gender: Annotated[str, Field(description="The patient's gender (male, female, other)")],
@@ -138,7 +142,7 @@ async def update_gender(
         userdata.patient_gender = Gender.OTHER
     return f"Thank you for sharing your gender information."
 
-
+@track
 @function_tool()
 async def update_contact(
     contact: Annotated[str, Field(description="The patient's contact number")],
@@ -150,7 +154,7 @@ async def update_contact(
     userdata.patient_contact = contact
     return f"Thank you. I've recorded your contact number as {contact}."
 
-
+@track
 @function_tool()
 async def update_email(
     email: Annotated[str, Field(description="The patient's email address")],
@@ -163,6 +167,7 @@ async def update_email(
     return f"Thank you. I've updated your email address as {email}."
 
 
+@track
 @function_tool()
 async def update_address(
     address: Annotated[str, Field(description="The patient's residential address")],
@@ -174,7 +179,7 @@ async def update_address(
     userdata.patient_address = address
     return f"Thank you. I've recorded your address."
 
-
+@track
 @function_tool()
 async def update_pain_details(
     location: Annotated[str, Field(description="Location of the pain")],
@@ -198,7 +203,7 @@ async def update_pain_details(
     userdata.pain_duration = duration
     return f"Thank you for sharing about your {severity} pain in the {location} area for {duration}. This helps us understand your condition better."
 
-
+@track
 @function_tool()
 async def add_medication(
     name: Annotated[str, Field(description="Name of the medication")],
@@ -218,7 +223,7 @@ async def add_medication(
     })
     return f"I've noted that you're taking {name} {dosage} {frequency}."
 
-
+@track
 @function_tool()
 async def add_symptom(
     symptom: Annotated[str, Field(description="Description of the symptom")],
@@ -238,7 +243,7 @@ async def add_symptom(
     })
     return f"I've noted your {severity} {symptom} that you've been experiencing for {duration}."
 
-
+@track
 @function_tool()
 async def add_allergy(
     allergy: Annotated[str, Field(description="Type of allergy")],
@@ -256,7 +261,7 @@ async def add_allergy(
     })
     return f"I've recorded your {severity} allergy to {allergy}."
 
-
+@track
 @function_tool()
 async def add_surgery(
     surgery: Annotated[str, Field(description="Type of surgery")],
@@ -274,7 +279,7 @@ async def add_surgery(
     })
     return f"I've noted your {surgery} procedure from {date}."
 
-
+@track
 @function_tool()
 async def add_family_history(
     condition: Annotated[str, Field(description="Medical condition in family history")],
@@ -292,7 +297,7 @@ async def add_family_history(
     })
     return f"I've recorded that your {relation} has {condition} in your family medical history."
 
-
+@track
 @function_tool()
 async def add_lifestyle_factor(
     factor: Annotated[str, Field(description="Lifestyle factor")],
@@ -311,6 +316,7 @@ async def add_lifestyle_factor(
     return f"Thank you for sharing about your {factor}: {details}."
 
 
+@track
 @function_tool()
 async def update_service_requested(
     service: Annotated[str, Field(description="Service requested by the patient")],
@@ -322,6 +328,7 @@ async def update_service_requested(
     return f"I understand you're looking for {service}. We can definitely assist you with that."
 
 
+@track
 @function_tool()
 async def add_notes(
     notes: Annotated[str, Field(description="Additional notes about the patient")],

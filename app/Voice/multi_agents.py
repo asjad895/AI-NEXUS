@@ -11,7 +11,7 @@ from livekit.agents import BackgroundAudioPlayer, AudioConfig, BuiltinAudioClip
 from livekit.agents import UserInputTranscribedEvent
 from app.Voice.livekit.plugins.sarvam_ai.tts import TTS as custom_sarvam_tts
 from app.Voice.utils import(
-    Gender,PainSeverity,MedicalData,
+    MedicalData,
     update_address,update_age,update_contact,update_email,update_gender,update_name,update_pain_details,
     update_service_requested,
     add_allergy,add_family_history,add_lifestyle_factor,add_medication,add_notes,add_surgery,add_symptom,
@@ -20,6 +20,16 @@ from app.Voice.utils import(
 from livekit.plugins.turn_detector.english import EnglishModel
 from livekit.agents import metrics, MetricsCollectedEvent
 import os
+from mem0 import AsyncMemoryClient
+from opik import track
+MEM0_API_KEY = os.getenv("MEM0_API_KEY")
+if not MEM0_API_KEY:
+    raise ValueError("MEM0_API_KEY is not set")
+
+os.environ["OPIK_API_KEY"] = os.getenv("OPIK_API_KEY")
+os.environ["OPIK_WORKSPACE"] = os.getenv("OPIK_WORKSPACE")
+os.environ["OPIK_PROJECT_NAME"] = os.getenv("OPIK_PROJECT_NAME")
+mem0 = AsyncMemoryClient(api_key=MEM0_API_KEY)
 
 usage_collector = metrics.UsageCollector()
 # llm=openai.LLM.with_cerebras(
@@ -96,6 +106,7 @@ class BaseAgent(Agent):
         await self.update_chat_ctx(chat_ctx)
         self.session.generate_reply(tool_choice="none")
 
+    @track
     async def _transfer_to_agent(self, name: str, context: RunContext_T) -> tuple[Agent, str]:
         userdata = context.userdata
         print(f"user data  for agent {name}\n{userdata.summarize()}")
@@ -334,6 +345,7 @@ async def entrypoint(ctx: JobContext):
         room=ctx.room,
         room_input_options=RoomInputOptions(),
         room_output_options=RoomOutputOptions(transcription_enabled=True),
+        # noise_cancellation=noise_cancellation.BVC()
     )
 
 
